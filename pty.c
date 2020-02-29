@@ -31,21 +31,31 @@ void sigwinch_handler(int signal) {
 }
 
 int pty_start(void) {
+    int pid;
     PTY * pty;
     
     if((pty = (PTY *) malloc(sizeof(PTY))) == NULL){
         perror("malloc: не удалось выделить память");
-        return 1;
+        return -1;
     }
 
     if (ioctl(STDIN_FILENO, TIOCGWINSZ, &pty->ws) < 0) {
         perror("ptypair: не удается получить размеры окна");
-        return 1;
+        return -1;
+    }
+
+    if ((pid = fork()) < 0) {
+        perror("fork: не удалось создать поток");
+        return -1;
+    }
+
+    if(pid){
+        return 0;
     }
 
     if ((pty->pid = forkpty(&pty->master, NULL, NULL, &pty->ws)) < 0) {
         perror("ptypair");
-        return 1;
+        exit(1);
     }
 
     if (pty->pid == 0) {
@@ -54,7 +64,7 @@ int pty_start(void) {
 
     parent_run(pty);
     free(pty);
-    return 0;
+    exit(0);
 }
 
 int child_run(char * cmd){
