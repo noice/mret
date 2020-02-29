@@ -21,7 +21,7 @@ int main(void) {
     struct pollfd ufds[2];
     int i;
     #define BUFSIZE 1024
-    char buf[1024];
+    char buf[BUFSIZE];
     struct termios ot, t;
     struct winsize ws;
     int done = 0;
