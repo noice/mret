@@ -7,6 +7,32 @@
 #include <netinet/in.h>
 
 #define PORT 8080
+const char * http_header = "HTTP/1.1 200 OK\nContent-Type: ";
+const char * http_header_end = "; charset=utf-8\nContent-Length:";
+
+int readfile(char * buf, char * path){
+    int c;
+    char * _buf = buf;
+    FILE * fp = fopen(path, "r");
+    while ((c = fgetc(fp)) != EOF) {
+            *(_buf ++) = c;
+    }
+    *_buf = 0;
+    fclose(fp);
+    return 0;
+}
+
+int get_msg_body(char * buf, char * path, char * type){
+    char header[300];
+    if(readfile(buf, path))
+        return 1;
+
+    sprintf(header, "%s%s%s%d\n\n", http_header, type, http_header_end, strlen(buf));
+    
+    memcpy(&buf[strlen(header)], buf, strlen(buf)+1);
+    memcpy(buf, header, strlen(header));
+    return 0;
+}
 
 int main(int argc, char** argv[])
 {
@@ -15,32 +41,6 @@ int main(int argc, char** argv[])
     long valread;
     int addrlen = sizeof(address);
 
-    char *hello = "HTTP/1.1 200 OK\nContent-Type: text/html; charset=utf-8\nContent-Length:";
-//--------------------------------------------------------------------------------
-//Danger zone
-//Gryaznyy kostyl'
-    FILE * fp = fopen("index.html", "r");
-    char buf[10000];
-    int buf_i = 0;
-    int c;
-    while ((c = fgetc(fp)) != EOF) {
-            buf[buf_i] = c;
-            ++ buf_i;
-    }
-    buf[buf_i] = 0;
-    fclose(fp);
-    
-    char snum[15];
-    sprintf(snum, "%d", buf_i);
-
-    memcpy(&buf[strlen(hello) + strlen(snum) + 2], buf, buf_i+1);
-    memcpy(buf, hello, strlen(hello));
-    memcpy(&buf[strlen(hello)], snum, strlen(snum));
-    buf[strlen(hello) + strlen(snum)] = '\n';
-    buf[strlen(hello) + strlen(snum) + 1] = '\n';
-    
-    hello = buf;
-//-------------------------------------------------------------------------------
     if ((serv_f = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("In socket");
@@ -82,7 +82,9 @@ int main(int argc, char** argv[])
             printf("No bytes are there to read");
         }
 
-        write(new_socket, hello, strlen(hello));
+        char buf[10000];
+        get_msg_body(buf, "index.html", "text/html"); 
+        write(new_socket, buf, strlen(buf));
         printf("--------------------------- Hello message sent -----------------------\n");
         close(new_socket);
     }
