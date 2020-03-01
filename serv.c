@@ -7,21 +7,26 @@
 #include <netinet/in.h>
 
 #define PORT 8080
-const char * http_header = "HTTP/1.1 200 OK\nContent-Type: ";
-const char * http_header_end = "; charset=utf-8\nContent-Length:";
+const char * http_header                = "HTTP/1.1 200 OK";
+const char * http_header_content_type   = "Content-Type: ";
+const char * http_header_content_length = "Content-Length: ";
 
 int 
 readfile(char * buf, char * path){
     //Read content from file in the buf
     //TODO: Check bufsize, error handling
+
     int c;
     char * _buf = buf;
     FILE * fp = fopen(path, "r");
+
     while ((c = fgetc(fp)) != EOF) {
             *(_buf ++) = c;
     }
+
     *_buf = 0;
     fclose(fp);
+
     return 0;
 }
 
@@ -29,11 +34,14 @@ int
 get_msg_body(char * buf, char * path, char * type){
     //Get message body from file. 
     //html type - "text/html"
+
     char header[300];
     if(readfile(buf, path))
         return 1;
 
-    sprintf(header, "%s%s%s%d\n\n", http_header, type, http_header_end, strlen(buf));
+    sprintf(header, "%s\n", http_header);
+    sprintf(&header[strlen(header)], "%s%s\n", http_header_content_type, type);
+    sprintf(&header[strlen(header)], "%s%d\n\n", http_header_content_length, strlen(buf));
     
     memcpy(&buf[strlen(header)], buf, strlen(buf)+1);
     memcpy(buf, header, strlen(header));
