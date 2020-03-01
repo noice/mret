@@ -15,8 +15,32 @@ int main(int argc, char** argv[])
     long valread;
     int addrlen = sizeof(address);
 
-    char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length:12\n\nHello world!";
+    char *hello = "HTTP/1.1 200 OK\nContent-Type: text/html; charset=utf-8\nContent-Length:";
+//--------------------------------------------------------------------------------
+//Danger zone
+//Gryaznyy kostyl'
+    FILE * fp = fopen("index.html", "r");
+    char buf[10000];
+    int buf_i = 0;
+    int c;
+    while ((c = fgetc(fp)) != EOF) {
+            buf[buf_i] = c;
+            ++ buf_i;
+    }
+    buf[buf_i] = 0;
+    fclose(fp);
+    
+    char snum[15];
+    sprintf(snum, "%d", buf_i);
 
+    memcpy(&buf[strlen(hello) + strlen(snum) + 2], buf, buf_i+1);
+    memcpy(buf, hello, strlen(hello));
+    memcpy(&buf[strlen(hello)], snum, strlen(snum));
+    buf[strlen(hello) + strlen(snum)] = '\n';
+    buf[strlen(hello) + strlen(snum) + 1] = '\n';
+    
+    hello = buf;
+//-------------------------------------------------------------------------------
     if ((serv_f = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("In socket");
