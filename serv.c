@@ -6,8 +6,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#define PORT 8080
 #define DOMAIN AF_INET
+
 const char * http_header                = "HTTP/1.1 200 OK";
 const char * http_header_content_type   = "Content-Type: ";
 const char * http_header_content_length = "Content-Length: ";
@@ -50,7 +50,7 @@ get_msg_body(char * buf, char * path, char * type){
 }
 
 int
-init_listener(char * ip_addr)
+init_listener(char * ip_addr, char * port)
 {
     int listener_fd;
     struct sockaddr_in address;
@@ -62,7 +62,7 @@ init_listener(char * ip_addr)
 
     // Filling sockaddr_in struct
     address.sin_family = DOMAIN;
-    address.sin_port = htons(PORT);
+    address.sin_port = htons( atoi(PORT) );
     inet_pton(DOMAIN, ip_addr, &(address.sin_addr));
 
     // Binding socket and check for error
