@@ -54,7 +54,7 @@ init_listener(char * ip_addr)
 {
     int listener_fd;
     struct sockaddr_in address;
-    // Get listener file descriptor and check for error
+    // Get socket listener and check for error
     if (listener_fd  = socket(DOMAIN, SOCK_STREAM, 0) < 0)
     {
         return -1;
