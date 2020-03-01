@@ -22,7 +22,8 @@ typedef struct {
 
 int new_pty(char * cmd);
 int shell_run(char * cmd);
-int pty_manager(PTY * pty);
+int init_pty(PTY * pty);
+int pty_loop(PTY * pty);
 
 volatile int propagate_sigwinch = 0;
 
@@ -33,7 +34,7 @@ sigwinch_handler(int signal) {
 
 int
 new_pty(char * cmd) {
-    //Initialize new pty
+    //Start new pty
     int pid;
     PTY * pty;
     
@@ -65,24 +66,22 @@ new_pty(char * cmd) {
         shell_run(cmd);
     }
 
-    pty_manager(pty);
+    init_pty(pty);
+    pty_loop(pty);
     free(pty);
     exit(0);
 }
 
 int 
 shell_run(char * cmd) {
-    //Start shell in pty
+    //Start shell
     execl(cmd, cmd, 0);
     return 1;
 }
 
 int 
-pty_manager(PTY * pty) {
-    //Manage pty input/output
-    int i;
-    int done = 0;
-
+init_pty(PTY * pty) {
+    //Initialize pty
     pty->act.sa_handler = sigwinch_handler;
     sigemptyset(&(pty->act.sa_mask));
     pty->act.sa_flags = 0;
@@ -104,6 +103,15 @@ pty_manager(PTY * pty) {
     pty->ufds[0].events = POLLIN;
     pty->ufds[1].fd = pty->master;
     pty->ufds[1].events = POLLIN;
+    
+    return 0;
+}
+
+int
+pty_loop(PTY * pty) {
+    //Manage pty input/output
+    int i;
+    int done = 0;
 
     do {
         int r;
@@ -129,7 +137,6 @@ pty_manager(PTY * pty) {
             }
 
             propagate_sigwinch = 0;
-
             continue;
         }
 
