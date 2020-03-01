@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 
 #define PORT 8080
+#define DOMAIN AF_INET
 const char * http_header                = "HTTP/1.1 200 OK";
 const char * http_header_content_type   = "Content-Type: ";
 const char * http_header_content_length = "Content-Length: ";
@@ -48,7 +49,38 @@ get_msg_body(char * buf, char * path, char * type){
     return 0;
 }
 
-int 
+int
+init_listener(char * ip_addr)
+{
+    int listener_fd;
+    struct sockaddr_in address;
+    // Get listener file descriptor and check for error
+    if (listener_fd  = socket(DOMAIN, SOCK_STREAM, 0) < 0)
+    {
+        return -1;
+    }
+
+    // Filling sockaddr_in struct
+    address.sin_family = DOMAIN;
+    address.sin_port = htons(PORT);
+    inet_pton(DOMAIN, ip_addr, &(address.sin_addr));
+
+    // Binding socket and check for error
+    if (bind(listener_fd, (struct sockaddr *) &address, sizeof(address)) < 0)
+    {
+        return -1;
+    }
+
+    // Set socket to listen and check for error
+    if (listen(listener_fd, 10) < 0)
+    {
+        return -1;
+    }
+    
+    return listener_fd;
+}
+
+/* int 
 main(int argc, char** argv[])
 {
     int serv_f, new_socket;
@@ -106,3 +138,4 @@ main(int argc, char** argv[])
 
     return 0;
 }
+*/
