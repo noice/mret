@@ -10,7 +10,10 @@
 const char * http_header = "HTTP/1.1 200 OK\nContent-Type: ";
 const char * http_header_end = "; charset=utf-8\nContent-Length:";
 
-int readfile(char * buf, char * path){
+int 
+readfile(char * buf, char * path){
+    //Read content from file in the buf
+    //TODO: Check bufsize, error handling
     int c;
     char * _buf = buf;
     FILE * fp = fopen(path, "r");
@@ -22,7 +25,10 @@ int readfile(char * buf, char * path){
     return 0;
 }
 
-int get_msg_body(char * buf, char * path, char * type){
+int 
+get_msg_body(char * buf, char * path, char * type){
+    //Get message body from file. 
+    //html type - "text/html"
     char header[300];
     if(readfile(buf, path))
         return 1;
@@ -34,7 +40,8 @@ int get_msg_body(char * buf, char * path, char * type){
     return 0;
 }
 
-int main(int argc, char** argv[])
+int 
+main(int argc, char** argv[])
 {
     int serv_f, new_socket;
     struct sockaddr_in address;

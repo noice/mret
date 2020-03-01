@@ -20,17 +20,20 @@ typedef struct {
     struct sigaction act;
 } PTY;
 
-int pty_start(void);
-int child_run(char * cmd);
-int parent_run(PTY * pty);
+int new_pty(char * cmd);
+int shell_run(char * cmd);
+int pty_manager(PTY * pty);
 
 volatile int propagate_sigwinch = 0;
 
-void sigwinch_handler(int signal) {
+void 
+sigwinch_handler(int signal) {
     propagate_sigwinch = 1;
 }
 
-int pty_start(void) {
+int
+new_pty(char * cmd) {
+    //Initialize new pty
     int pid;
     PTY * pty;
     
@@ -59,20 +62,24 @@ int pty_start(void) {
     }
 
     if (pty->pid == 0) {
-        child_run("/bin/bash");
+        shell_run(cmd);
     }
 
-    parent_run(pty);
+    pty_manager(pty);
     free(pty);
     exit(0);
 }
 
-int child_run(char * cmd){
-        execl(cmd, cmd, 0);
-        return 1;
+int 
+shell_run(char * cmd) {
+    //Start shell in pty
+    execl(cmd, cmd, 0);
+    return 1;
 }
 
-int parent_run(PTY * pty){
+int 
+pty_manager(PTY * pty) {
+    //Manage pty input/output
     int i;
     int done = 0;
 

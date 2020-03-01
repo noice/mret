@@ -5,10 +5,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-int pty_start(void);
+int new_pty(char *);
 
-int main(void) {
-    pty_start();
+int 
+main(void) {
+    new_pty("/bin/bash");
     wait(0);
     exit(0);
 }
