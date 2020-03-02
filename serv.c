@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define DOMAIN AF_INET
 
@@ -45,7 +46,9 @@ get_msg_body(char * buf, char * path, char * type){
     sprintf(&header[strlen(header)], "%s%d\n\n", http_header_content_length, strlen(buf));
     
     //memcpy(&buf[strlen(header)], buf, strlen(buf)+1);
-    for(char * from = &buf[strlen(buf)], char * to = &buf[strlen(buf) + strlen(header)]; from != buf; --from, --to)
+    char * from = &buf[strlen(buf)];
+    char * to = &buf[strlen(buf) + strlen(header)];
+    for(; from != buf; --from, --to)
         *to = *from;
     buf[strlen(header)] = buf[0];
 
@@ -66,7 +69,7 @@ init_listener(char * ip_addr, char * port)
 
     // Filling sockaddr_in struct
     address.sin_family = DOMAIN;
-    address.sin_port = htons( atoi(PORT) );
+    address.sin_port = htons( atoi(port) );
     inet_pton(DOMAIN, ip_addr, &(address.sin_addr));
 
     // Binding socket and check for error
