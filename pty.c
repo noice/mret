@@ -54,7 +54,7 @@ new_pty(char * cmd) {
     }
 
     if(pid){
-        return 0;
+        return pid;
     }
 
     if ((pty->pid = forkpty(&pty->master, NULL, NULL, &pty->ws)) < 0) {
@@ -112,11 +112,11 @@ pty_loop(PTY * pty) {
     //Manage pty input/output
     int i;
     int done = 0;
+    int r;
 
     do {
-        int r;
-
         r = poll(pty->ufds, 2, -1);
+
         if ((r < 0) && (errno != EINTR)) {
             done = 1;
             break;

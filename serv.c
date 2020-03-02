@@ -44,7 +44,11 @@ get_msg_body(char * buf, char * path, char * type){
     sprintf(&header[strlen(header)], "%s%s\n", http_header_content_type, type);
     sprintf(&header[strlen(header)], "%s%d\n\n", http_header_content_length, strlen(buf));
     
-    memcpy(&buf[strlen(header)], buf, strlen(buf)+1);
+    //memcpy(&buf[strlen(header)], buf, strlen(buf)+1);
+    for(char * from = &buf[strlen(buf)], char * to = &buf[strlen(buf) + strlen(header)]; from != buf; --from, --to)
+        *to = *from;
+    buf[strlen(header)] = buf[0];
+
     memcpy(buf, header, strlen(header));
     return 0;
 }
