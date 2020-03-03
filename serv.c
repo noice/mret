@@ -110,14 +110,20 @@ get_connection(int listener_fd) {
     if (read(new_socket, buffer, 1024) < 0) {
         printf("No bytes are there to read");
     }
-    printf("%s", buffer);
+    //printf("%s", buffer);
 
-    if(!strncmp(buffer, "GET / HTTP/1.1", 14)) {
-        //Send msg
-        char buf[10000];
-        get_msg_body(buf, "index.html", "text/html"); 
-        write(new_socket, buf, strlen(buf));
+    if (!strncmp(buffer, "GET / HTTP/1.1", 14)) {
+        if (strstr(buffer, "Accept: text/html")){
+            //Send msg
+            char buf[10000];
+            get_msg_body(buf, "index.html", "text/html"); 
+            write(new_socket, buf, strlen(buf));
+        } else {
+            printf("Non html request :(\n\n");
+            return -1;
+        }
     } else {
+        printf("Bad request\n\n%s\n", buffer);
         return -1;
     }
 
