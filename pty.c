@@ -62,10 +62,13 @@ new_pty(char * cmd, int connection_fd) {
 
     if (pty->pid == 0) {
         shell_run(cmd);
+        exit(0);
     }
 
     init_pty(pty);
     pty_loop(pty);
+
+    close(connection_fd);
     free(pty);
     exit(0);
 }

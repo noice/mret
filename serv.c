@@ -118,7 +118,5 @@ listen_loop(int listener_fd) {
     get_msg_body(buf, "index.html", "text/html"); 
     write(new_socket, buf, strlen(buf));
 
-    close(new_socket);
-    //return new_socket;
-    return 0;
+    return new_socket;
 }
