@@ -1,11 +1,9 @@
-#include <errno.h>
+#include "include.h"
+
 #include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <termios.h>
-#include <unistd.h>
 #include <pty.h>
 
 #define BUFSIZE 1024
@@ -20,7 +18,7 @@ typedef struct {
     struct sigaction act;
 } PTY;
 
-int new_pty(char * cmd);
+int new_pty(char * cmd, int connection_fd);
 int shell_run(char * cmd);
 int init_pty(PTY * pty);
 int pty_loop(PTY * pty);
@@ -33,7 +31,7 @@ sigwinch_handler(int signal) {
 }
 
 int
-new_pty(char * cmd) {
+new_pty(char * cmd, int connection_fd) {
     //Start new pty
     int pid;
     PTY * pty;
