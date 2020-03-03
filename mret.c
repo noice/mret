@@ -5,7 +5,7 @@
 
 int new_pty(char *, int);
 int init_listener(char *, char *);
-int listen_loop(int);
+int get_connection(int);
 
 int listener_fd;
 int connection_fd;
@@ -15,7 +15,7 @@ main(void) {
     listener_fd = init_listener("127.0.0.1", "8080");
 
     while(1){
-        connection_fd = listen_loop(listener_fd);
+        connection_fd = get_connection(listener_fd);
         new_pty("/bin/bash", connection_fd);
     }
     

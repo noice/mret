@@ -9,7 +9,7 @@
 int readfile(char * buf, char * path);
 int get_msg_body(char * buf, char * path, char * type);
 int init_listener(char * ip_addr, char * port);
-int listen_loop(int listener_fd);
+int get_connection(int listener_fd);
 
 const char * http_header                = "HTTP/1.1 200 OK";
 const char * http_header_content_type   = "Content-Type: ";
@@ -93,7 +93,7 @@ init_listener(char * ip_addr, char * port)
 }
 
 int
-listen_loop(int listener_fd) {
+get_connection(int listener_fd) {
     int new_socket;
     int addrlen;
     struct sockaddr_in address;
