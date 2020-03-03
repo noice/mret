@@ -62,8 +62,9 @@ init_listener(char * ip_addr, char * port)
     int listener_fd;
     struct sockaddr_in address;
     // Get socket listener and check for error
-    if (listener_fd  = socket(DOMAIN, SOCK_STREAM, 0) < 0)
+    if ((listener_fd  = socket(DOMAIN, SOCK_STREAM, 0)) < 0)
     {
+        perror("In socket");
         return -1;
     }
 
@@ -75,74 +76,47 @@ init_listener(char * ip_addr, char * port)
     // Binding socket and check for error
     if (bind(listener_fd, (struct sockaddr *) &address, sizeof(address)) < 0)
     {
+        perror("In bind");
         return -1;
     }
 
     // Set socket to listen and check for error
     if (listen(listener_fd, 10) < 0)
     {
+        perror("In listen");
         return -1;
     }
     
     return listener_fd;
 }
 
-/* int 
-main(int argc, char** argv[])
-{
-    int serv_f, new_socket;
+int
+listen_loop(int listener_fd) {
+    int new_socket;
+    int addrlen;
     struct sockaddr_in address;
     long valread;
-    int addrlen = sizeof(address);
 
-    if ((serv_f = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        perror("In socket");
+    //Connecting
+    if ((new_socket = accept(listener_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+        perror("In accept");
         exit(EXIT_FAILURE);
     }
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
-
-    memset(address.sin_zero, '\0', sizeof(address.sin_zero));
-
-    if (bind(serv_f, (struct sockaddr *) &address, sizeof(address)) < 0)
-    {
-        perror("In bind");
-        exit(1);
+    //Get request content
+    char buffer[30000] = {0};
+    valread = read(new_socket, buffer, 1024);
+    //printf("%s\n", buffer);
+    if (valread < 0) {
+        printf("No bytes are there to read");
     }
 
-    if (listen(serv_f, 10) < 0)
-    {
-        perror("In listen");
-        exit(EXIT_FAILURE);
-    }
+    //Send msg
+    char buf[10000];
+    get_msg_body(buf, "index.html", "text/html"); 
+    write(new_socket, buf, strlen(buf));
 
-    while (1)
-    {
-        printf("\n++++++ Waiting for new connection ++++++\n\n");
-        if ((new_socket = accept(serv_f, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0)
-            {
-                perror("In accept");
-                exit(EXIT_FAILURE);
-            }
-
-        char buffer[30000] = {0};
-        valread = read(new_socket, buffer, 1024);
-        printf("%s\n", buffer);
-        if (valread < 0)
-        {
-            printf("No bytes are there to read");
-        }
-
-        char buf[10000];
-        get_msg_body(buf, "index.html", "text/html"); 
-        write(new_socket, buf, strlen(buf));
-        printf("--------------------------- Hello message sent -----------------------\n");
-        close(new_socket);
-    }
-
+    close(new_socket);
+    //return new_socket;
     return 0;
 }
-*/
