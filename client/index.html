@@ -4,13 +4,7 @@
         <title>Test site</title>
     </head>
     <body>
-        <script>
-let ws = new WebSocket("ws://localhost:8080");
-ws.onmessage = ({data}) => {
-          console.log(data);
-}
-ws.onopen = () => ws.send('Text');
-        </script>
+        <script type="application/javascript" src="app.js"></script>
         <h1>Работает???</h1>    
     </body>
 </html>
