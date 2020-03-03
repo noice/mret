@@ -7,13 +7,13 @@
 #include <pty.h>
 
 typedef struct {
-    int master;
-    int pid;
-    struct pollfd ufds[2];
-    char buf[BUFSIZE];
-    struct termios ot, t;
-    struct winsize ws;
-    struct sigaction act;
+    int master;             // Master end. 
+    int pid;                // Slave end.
+    struct pollfd ufds[2];  // Two fds which events will be waited
+    char buf[BUFSIZE];      // Saving input/output after read here
+    struct termios ot, t;   // Struct with terminal attrs
+    struct winsize ws;      // Sizes of window
+    struct sigaction act;   // Action for signal
 } PTY;
 
 int new_pty(char * cmd, int connection_fd);
@@ -21,43 +21,51 @@ int shell_run(char * cmd);
 int init_pty(PTY * pty, int connection_fd);
 int pty_loop(PTY * pty, int connection_fd);
 
-volatile int propagate_sigwinch = 0;
+volatile int propagate_sigwinch = 0; // If 1, then call ioctl to change winsize
 
 void 
-sigwinch_handler(int signal) {
+sigwinch_handler(int signal) { // Handler for SIGWINCH
     propagate_sigwinch = 1;
 }
 
 int
 new_pty(char * cmd, int connection_fd) {
-    //Start new pty
+    // Start new pty
     int pid;
     PTY * pty;
     
-    if((pty = (PTY *) malloc(sizeof(PTY))) == NULL){
-        perror("malloc: не удалось выделить память");
+    // Malloc memory for struct pty and check for error
+    if((pty = (PTY *) malloc(sizeof(PTY))) == NULL) {
+        perror("Error in malloc for pty struct");
         return -1;
     }
 
+    // Change window size and check for error
     if (ioctl(STDIN_FILENO, TIOCGWINSZ, &pty->ws) < 0) {
-        perror("ptypair: не удается получить размеры окна");
+        perror("Error in ioctl for window size");
         return -1;
     }
 
+    // Make two processes
+    // One for accepting other connections (a.k.a p1)
+    // Other for creating pty (a.k.a p2)
     if ((pid = fork()) < 0) {
-        perror("fork: не удалось создать поток");
+        perror("Error in fork");
         return -1;
     }
 
-    if(pid){
+    // p1 returns pid for pty process and waits for new connections
+    if(pid) {
         return pid;
     }
 
+    // p2 create pty process
     if ((pty->pid = forkpty(&pty->master, NULL, NULL, &pty->ws)) < 0) {
         perror("ptypair");
         exit(1);
     }
 
+    // newly created pty execute commands in cmd
     if (pty->pid == 0) {
         shell_run(cmd);
         exit(0);
