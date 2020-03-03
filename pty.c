@@ -20,8 +20,8 @@ typedef struct {
 
 int new_pty(char * cmd, int connection_fd);
 int shell_run(char * cmd);
-int init_pty(PTY * pty);
-int pty_loop(PTY * pty);
+int init_pty(PTY * pty, int connection_fd);
+int pty_loop(PTY * pty, int connection_fd);
 
 volatile int propagate_sigwinch = 0;
 
@@ -65,8 +65,8 @@ new_pty(char * cmd, int connection_fd) {
         exit(0);
     }
 
-    init_pty(pty);
-    pty_loop(pty);
+    init_pty(pty, connection_fd);
+    pty_loop(pty, connection_fd);
 
     close(connection_fd);
     free(pty);
@@ -81,7 +81,7 @@ shell_run(char * cmd) {
 }
 
 int 
-init_pty(PTY * pty) {
+init_pty(PTY * pty, int connection_fd) {
     //Initialize pty
     pty->act.sa_handler = sigwinch_handler;
     sigemptyset(&(pty->act.sa_mask));
@@ -91,16 +91,16 @@ init_pty(PTY * pty) {
         return 1;
     }
 
-    tcgetattr(STDIN_FILENO, &pty->ot);
+    tcgetattr(connection_fd, &pty->ot);
     pty->t = pty->ot;
     pty->t.c_lflag &= ~(ICANON | ISIG | ECHO | ECHOCTL | ECHOE |
                    ECHOK | ECHOKE | ECHONL | ECHOPRT);
     pty->t.c_iflag |= IGNBRK;
     pty->t.c_cc[VMIN] = 1;
     pty->t.c_cc[VTIME] = 0;
-    tcsetattr(STDIN_FILENO, TCSANOW, &pty->t);
+    tcsetattr(connection_fd, TCSANOW, &pty->t);
 
-    pty->ufds[0].fd = STDIN_FILENO;
+    pty->ufds[0].fd = connection_fd;
     pty->ufds[0].events = POLLIN;
     pty->ufds[1].fd = pty->master;
     pty->ufds[1].events = POLLIN;
@@ -109,7 +109,7 @@ init_pty(PTY * pty) {
 }
 
 int
-pty_loop(PTY * pty) {
+pty_loop(PTY * pty, int connection_fd) {
     //Manage pty input/output
     int i;
     int done = 0;
@@ -133,6 +133,7 @@ pty_loop(PTY * pty) {
             if (ioctl(STDIN_FILENO, TIOCGWINSZ, &pty->ws) < 0) {
                 perror("ptypair: не удается получить размеры окна");
             }
+
             if (ioctl(pty->master, TIOCSWINSZ, &pty->ws) < 0) {
                 perror("не удается восстановить размеры окна");
             }
@@ -144,22 +145,23 @@ pty_loop(PTY * pty) {
         if (pty->ufds[1].revents & POLLIN) {
              i = read (pty->master, pty->buf, BUFSIZE);
              if (i >= 1) {
-                 write(STDOUT_FILENO, pty->buf, i);
+                 //write(STDOUT_FILENO, pty->buf, i);
              } else {
                  done = 1;
              }
         }
 
         if (pty->ufds[0].revents & POLLIN) {
-             i = read (STDIN_FILENO, pty->buf, BUFSIZE);
+             i = read (connection_fd, pty->buf, BUFSIZE);
              if (i >= 1) {
-                 write(pty->master, pty->buf, i);
+                 printf("%s", pty->buf);
+                 //write(pty->master, pty->buf, i);
              } else {
                   done = 1;
              }
         }
     } while (!done);
 
-    tcsetattr(STDIN_FILENO, TCSANOW, &pty->ot);
+    tcsetattr(connection_fd, TCSANOW, &pty->ot);
     return 0;
 }

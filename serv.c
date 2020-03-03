@@ -94,21 +94,22 @@ init_listener(char * ip_addr, char * port)
 
 int
 get_connection(int listener_fd) {
-    int new_socket;
-    int addrlen;
     struct sockaddr_in address;
-    long valread;
+    int addrlen;
+    int connection_fd;
 
     //Connecting
-    if ((new_socket = accept(listener_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+    if ((connection_fd = accept(listener_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
         perror("In accept");
         return -1;
     }
 
     //Get request content
-    char buffer[1024] = {0};
-    if (read(new_socket, buffer, 1024) < 0) {
-        printf("No bytes are there to read");
+    char buffer[1025] = {0};
+    if (read(connection_fd, buffer, 1024) < 0) {
+        printf("No bytes are there to read\n\n");
+        close(connection_fd);
+        return -1;
     }
     //printf("%s", buffer);
 
@@ -117,15 +118,17 @@ get_connection(int listener_fd) {
             //Send msg
             char buf[10000];
             get_msg_body(buf, "index.html", "text/html"); 
-            write(new_socket, buf, strlen(buf));
+            write(connection_fd, buf, strlen(buf));
         } else {
             printf("Non html request :(\n\n");
+            close(connection_fd);
             return -1;
         }
     } else {
         printf("Bad request\n\n%s\n", buffer);
+        close(connection_fd);
         return -1;
     }
 
-    return new_socket;
+    return connection_fd;
 }

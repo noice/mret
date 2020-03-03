@@ -12,7 +12,9 @@ int connection_fd;
 
 int 
 main(void) {
-    listener_fd = init_listener("127.0.0.1", "8080");
+    if((listener_fd = init_listener("127.0.0.1", "8080")) < 0){
+        exit(0);
+    }
 
     while(1) {
         connection_fd = get_connection(listener_fd);
