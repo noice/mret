@@ -8,6 +8,7 @@
 
 int readfile(char * buf, char * path);
 int get_msg_body(char * buf, char * path, char * type);
+int request_response(int connection_fd, char * buffer);
 int init_listener(char * ip_addr, char * port);
 int get_connection(int listener_fd);
 
@@ -16,7 +17,7 @@ const char * http_header_content_type   = "Content-Type: ";
 const char * http_header_content_length = "Content-Length: ";
 
 int 
-readfile(char * buf, char * path){
+readfile(char * buf, char * path) {
     //Read content from file in the buf
     //TODO: Check bufsize, error handling
 
@@ -35,7 +36,7 @@ readfile(char * buf, char * path){
 }
 
 int 
-get_msg_body(char * buf, char * path, char * type){
+get_msg_body(char * buf, char * path, char * type) {
     //Get message body from file. 
     //html type - "text/html"
 
@@ -45,7 +46,7 @@ get_msg_body(char * buf, char * path, char * type){
 
     sprintf(header, "%s\n", http_header);
     sprintf(&header[strlen(header)], "%s%s\n", http_header_content_type, type);
-    sprintf(&header[strlen(header)], "%s%d\n\n", http_header_content_length, strlen(buf));
+    sprintf(&header[strlen(header)], "%s%lu\n\n", http_header_content_length, strlen(buf));
     
     //memcpy(&buf[strlen(header)], buf, strlen(buf)+1);
     char * from = &buf[strlen(buf)];
@@ -56,6 +57,28 @@ get_msg_body(char * buf, char * path, char * type){
 
     memcpy(buf, header, strlen(header));
     return 0;
+}
+
+int
+request_response(int connection_fd, char * buffer) {
+    if (!strncmp(buffer, "GET / HTTP/1.1", 14)) {
+        if (strstr(buffer, "Accept: text/html")){
+            //Send msg
+            char buf[10000];
+            get_msg_body(buf, "index.html", "text/html"); 
+            write(connection_fd, buf, strlen(buf));
+        } else {
+            printf("Non html request :(\n\n");
+            close(connection_fd);
+            return -1;
+        }
+    } else {
+        printf("Bad request\n\n%s\n", buffer);
+        close(connection_fd);
+        return -1;
+    }
+
+    return connection_fd;
 }
 
 int
@@ -113,22 +136,5 @@ get_connection(int listener_fd) {
     }
     //printf("%s", buffer);
 
-    if (!strncmp(buffer, "GET / HTTP/1.1", 14)) {
-        if (strstr(buffer, "Accept: text/html")){
-            //Send msg
-            char buf[10000];
-            get_msg_body(buf, "index.html", "text/html"); 
-            write(connection_fd, buf, strlen(buf));
-        } else {
-            printf("Non html request :(\n\n");
-            close(connection_fd);
-            return -1;
-        }
-    } else {
-        printf("Bad request\n\n%s\n", buffer);
-        close(connection_fd);
-        return -1;
-    }
-
-    return connection_fd;
+    return request_response(connection_fd, buffer);
 }
