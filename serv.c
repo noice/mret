@@ -102,21 +102,24 @@ get_connection(int listener_fd) {
     //Connecting
     if ((new_socket = accept(listener_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
         perror("In accept");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     //Get request content
-    char buffer[30000] = {0};
-    valread = read(new_socket, buffer, 1024);
-    //printf("%s\n", buffer);
-    if (valread < 0) {
+    char buffer[1024] = {0};
+    if (read(new_socket, buffer, 1024) < 0) {
         printf("No bytes are there to read");
     }
+    printf("%s", buffer);
 
-    //Send msg
-    char buf[10000];
-    get_msg_body(buf, "index.html", "text/html"); 
-    write(new_socket, buf, strlen(buf));
+    if(!strncmp(buffer, "GET / HTTP/1.1", 14)) {
+        //Send msg
+        char buf[10000];
+        get_msg_body(buf, "index.html", "text/html"); 
+        write(new_socket, buf, strlen(buf));
+    } else {
+        return -1;
+    }
 
     return new_socket;
 }

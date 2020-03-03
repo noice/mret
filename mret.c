@@ -14,9 +14,11 @@ int
 main(void) {
     listener_fd = init_listener("127.0.0.1", "8080");
 
-    while(1){
+    while(1) {
         connection_fd = get_connection(listener_fd);
-        new_pty("/bin/bash", connection_fd);
+        if(connection_fd > 0) {
+            new_pty("/bin/bash", connection_fd);
+        }
     }
     
     close(listener_fd);
