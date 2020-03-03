@@ -67,10 +67,10 @@ request_response(int connection_fd, char * buffer) {
             char buf[10000];
             get_msg_body(buf, "index.html", "text/html"); 
             write(connection_fd, buf, strlen(buf));
-        } else {
-            printf("Non html request :(\n\n");
             close(connection_fd);
             return -1;
+        } else {
+            printf("ws socket open\n");
         }
     } else {
         printf("Bad request\n\n%s\n", buffer);
@@ -128,8 +128,8 @@ get_connection(int listener_fd) {
     }
 
     //Get request content
-    char buffer[1025] = {0};
-    if (read(connection_fd, buffer, 1024) < 0) {
+    char buffer[BUFSIZE] = {0};
+    if (read(connection_fd, buffer, BUFSIZE) < 0) {
         printf("No bytes are there to read\n\n");
         close(connection_fd);
         return -1;

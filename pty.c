@@ -6,8 +6,6 @@
 #include <termios.h>
 #include <pty.h>
 
-#define BUFSIZE 1024
-
 typedef struct {
     int master;
     int pid;

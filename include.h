@@ -4,3 +4,5 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+
+#define BUFSIZE 2048
