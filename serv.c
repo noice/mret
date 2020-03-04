@@ -95,21 +95,21 @@ request_response(int connection_fd, char * buffer) {
             else if(!strcmp(".ico", &path[pathlen - 4]))
                 strcpy(type, "image/vnd.microsoft.icon");
             else {
-                printf("Unknown type - %s", path);
-                close(connection_fd);
-                return -1;
+                strcpy(type, "text/plain");
             }
 
-            printf("type - %s\n", type);
+            printf("type - %s\n\n", type);
 
             res = get_msg_body(buf, path, type);
             if(res == 0){
                 write(connection_fd, buf, strlen(buf));
             } else {
                 printf("404 - %s\n", path);
+                res = get_msg_body(buf, "client/404.html", "text/html");
+                write(connection_fd, buf, strlen(buf));
             }
         } else {
-            printf("ws socket open\n");
+            printf("ws socket open\n\n");
             //return connection_fd;
         }
     } else {
