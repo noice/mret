@@ -24,6 +24,10 @@ readfile(char * buf, char * path) {
     int c;
     char * _buf = buf;
     FILE * fp = fopen(path, "r");
+    
+    if (!fp){
+        return -1;
+    }
 
     while ((c = fgetc(fp)) != EOF) {
             *(_buf ++) = c;
@@ -40,9 +44,10 @@ get_msg_body(char * buf, char * path, char * type) {
     //Get message body from file. 
     //html type - "text/html"
 
-    char header[300];
-    if(readfile(buf, path))
-        return 1;
+    char header[BUFSIZE];
+
+    if(readfile(buf, path) == -1)
+        return -1;
 
     sprintf(header, "%s\n", http_header);
     sprintf(&header[strlen(header)], "%s%s\n", http_header_content_type, type);
@@ -61,24 +66,36 @@ get_msg_body(char * buf, char * path, char * type) {
 
 int
 request_response(int connection_fd, char * buffer) {
-    if (!strncmp(buffer, "GET / HTTP/1.1", 14)) {
-        if (strstr(buffer, "Accept: text/html")){
+    printf("accepted\n");
+    if (!strncmp(buffer, "GET ", 4)) {
+        if (strstr(buffer, "Upgrade: websocket") == NULL){
             //Send msg
+            int res, pathlen, dirlen;
             char buf[10000];
-            get_msg_body(buf, "index.html", "text/html"); 
-            write(connection_fd, buf, strlen(buf));
-            close(connection_fd);
-            return -1;
+            char path[255] = "client";
+
+            dirlen = strlen(path);
+            pathlen = strchr(&buffer[4], ' ') - &buffer[4];
+            strncpy(&path[dirlen], &buffer[4], pathlen);
+            path[dirlen + pathlen] = 0;
+            printf("%s\n", path);
+
+            res = get_msg_body(buf, path, "text/html");
+            if(res == 0){
+                write(connection_fd, buf, strlen(buf));
+            } else {
+                printf("404\n");
+            }
         } else {
             printf("ws socket open\n");
+            //return connection_fd;
         }
     } else {
         printf("Bad request\n\n%s\n", buffer);
-        close(connection_fd);
-        return -1;
     }
 
-    return connection_fd;
+    close(connection_fd);
+    return -1;
 }
 
 int
