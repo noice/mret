@@ -66,12 +66,12 @@ get_msg_body(char * buf, char * path, char * type) {
 
 int
 request_response(int connection_fd, char * buffer) {
-    printf("accepted\n");
     if (!strncmp(buffer, "GET ", 4)) {
         if (strstr(buffer, "Upgrade: websocket") == NULL){
             //Send msg
             int res, pathlen, dirlen;
             char buf[10000];
+            char type[30];
             char path[255] = "client";
 
             dirlen = strlen(path);
@@ -80,11 +80,33 @@ request_response(int connection_fd, char * buffer) {
             path[dirlen + pathlen] = 0;
             printf("%s\n", path);
 
-            res = get_msg_body(buf, path, "text/html");
+            if(path[strlen(path) - 1] == '/'){
+                strcpy(&path[strlen(path)], "index.html");
+            }
+
+            pathlen = strlen(path);
+
+            if(!strcmp(".html", &path[pathlen - 5]))
+                strcpy(type, "text/html");
+            else if(!strcmp(".js", &path[pathlen - 3]))
+                strcpy(type, "application/javascript");
+            else if(!strcmp(".css", &path[pathlen - 4]))
+                strcpy(type, "text/css");
+            else if(!strcmp(".ico", &path[pathlen - 4]))
+                strcpy(type, "image/vnd.microsoft.icon");
+            else {
+                printf("Unknown type - %s", path);
+                close(connection_fd);
+                return -1;
+            }
+
+            printf("type - %s\n", type);
+
+            res = get_msg_body(buf, path, type);
             if(res == 0){
                 write(connection_fd, buf, strlen(buf));
             } else {
-                printf("404\n");
+                printf("404 - %s\n", path);
             }
         } else {
             printf("ws socket open\n");
