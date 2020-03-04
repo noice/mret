@@ -137,6 +137,11 @@ init_listener(char * ip_addr, char * port)
     address.sin_port = htons( atoi(port) );
     inet_pton(DOMAIN, ip_addr, &(address.sin_addr));
 
+    // Reuse address without waiting and check for error
+    if (setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, NULL, NULL) < 0) {
+        perror("Error setting SO_REUSEADDR option for listen_fd");
+    }
+    
     // Binding socket and check for error
     if (bind(listener_fd, (struct sockaddr *) &address, sizeof(address)) < 0)
     {
@@ -164,6 +169,11 @@ get_connection(int listener_fd) {
     if ((connection_fd = accept(listener_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
         perror("In accept");
         return -1;
+    }
+
+    // Reuse address without waiting and check for error
+    if (setsockopt(connection_fd, SOL_SOCKET, SO_REUSEADDR, NULL, NULL) < 0) {
+        perror("Error setting SO_REUSEADDR option for connenction_fd");
     }
 
     //Get request content
