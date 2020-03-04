@@ -10,7 +10,7 @@ typedef struct {
     int master;             // Master end. 
     int pid;                // Slave end.
     struct pollfd ufds[2];  // Two fds which events will be waited
-    char buf[BUFSIZE];      // Saving input/output after read here
+    char buf[REQUESTSIZE];  // Saving input/output after read here
     struct termios ot, t;   // Struct with terminal attrs
     struct winsize ws;      // Sizes of window
     struct sigaction act;   // Action for signal
@@ -149,7 +149,7 @@ pty_loop(PTY * pty, int connection_fd) {
         }
 
         if (pty->ufds[1].revents & POLLIN) {
-             i = read (pty->master, pty->buf, BUFSIZE);
+             i = read (pty->master, pty->buf, REQUESTSIZE);
              if (i >= 1) {
                  //write(STDOUT_FILENO, pty->buf, i);
              } else {
@@ -158,7 +158,7 @@ pty_loop(PTY * pty, int connection_fd) {
         }
 
         if (pty->ufds[0].revents & POLLIN) {
-             i = read (connection_fd, pty->buf, BUFSIZE);
+             i = read (connection_fd, pty->buf, REQUESTSIZE);
              if (i >= 1) {
                  printf("%s", pty->buf);
                  //write(pty->master, pty->buf, i);

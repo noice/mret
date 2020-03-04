@@ -44,7 +44,7 @@ get_msg_body(char * buf, char * path, char * type) {
     //Get message body from file. 
     //html type - "text/html"
 
-    char header[BUFSIZE];
+    char header[HEADERSIZE];
 
     if(readfile(buf, path) == -1)
         return -1;
@@ -70,9 +70,9 @@ request_response(int connection_fd, char * buffer) {
         if (strstr(buffer, "Upgrade: websocket") == NULL){
             //Send msg
             int res, pathlen, dirlen;
-            char buf[10000];
-            char type[30];
-            char path[255] = "client";
+            char buf[MSGSIZE];
+            char type[TYPESIZE];
+            char path[PATHSIZE] = "client";
 
             dirlen = strlen(path);
             pathlen = strchr(&buffer[4], ' ') - &buffer[4];
@@ -179,8 +179,8 @@ get_connection(int listener_fd) {
         perror("setsockopt(SO_REUSEADDR) failed");
 
     //Get request content
-    char buffer[BUFSIZE] = {0};
-    if (read(connection_fd, buffer, BUFSIZE) < 0) {
+    char buffer[REQUESTSIZE] = {0};
+    if (read(connection_fd, buffer, REQUESTSIZE) < 0) {
         printf("No bytes are there to read\n\n");
         close(connection_fd);
         return -1;
