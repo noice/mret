@@ -19,12 +19,12 @@ int
 ws_init_connection(int connection_fd, char * buf, uint len) {
     char sec_key_guid[103]; // 76 (max base64 length) + 36 (guid) + 1 (\0) = 103
     char *p_key;
-    char hash_res[];
-    char base64_res[];
-    char response_headers[] = "HTTP/1.1 200 OK\r\n"    
-                              "Upgrade: websocket\r\n" 
-                              "Connection: Upgrade\r\n"
-                              "Sec-WebSocket-Accept: ";
+    char hash_res[20];
+    char base64_res[76];
+    char response_headers[97] = "HTTP/1.1 200 OK\r\n"    
+                                "Upgrade: websocket\r\n" 
+                                "Connection: Upgrade\r\n"
+                                "Sec-WebSocket-Accept: ";
     // 97 (response headers) + 76 (max base64 length) + 4 (x2 CRLF) = 177
     char response[177];
 
