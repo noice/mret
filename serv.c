@@ -11,6 +11,10 @@ int get_msg_body(char * buf, char * path, char * type);
 int request_response(int connection_fd, char * buffer);
 int init_listener(char * ip_addr, char * port);
 int get_connection(int listener_fd);
+int http_response(int connection_fd, char * buf, uint len);
+
+int is_ws_request(char * buf, uint len);
+int ws_init_connection(int connection_fd, char * buffer, uint len);
 
 const char * http_header                = "HTTP/1.1 200 OK";
 const char * http_header_content_type   = "Content-Type: ";
@@ -64,6 +68,10 @@ get_msg_body(char * buf, char * path, char * type) {
     return 0;
 }
 
+int http_response(int connection_fd, char * buf, uint len) {
+    return 0;
+}
+
 int
 request_response(int connection_fd, char * buffer) {
     if (!strncmp(buffer, "GET ", 4)) {
@@ -108,8 +116,9 @@ request_response(int connection_fd, char * buffer) {
                 res = get_msg_body(buf, "client/404.html", "text/html");
                 write(connection_fd, buf, strlen(buf));
             }
-        } else {
+        } else if (is_ws_request(buffer, strlen(buffer))){
             printf("ws socket open\n\n");
+            ws_init_connection(connection_fd, buffer, strlen(buffer));
             //return connection_fd;
         }
     } else {

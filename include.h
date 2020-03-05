@@ -10,3 +10,5 @@
 #define HEADERSIZE     2048
 #define REQUESTSIZE    8192
 #define MSGSIZE        65536 
+
+typedef unsigned int uint;

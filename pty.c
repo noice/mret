@@ -28,12 +28,18 @@ sigwinch_handler(int signal) { // Handler for SIGWINCH
     propagate_sigwinch = 1;
 }
 
+int http_response(int connection_fd, char * buf, uint len);
+int ws_send(int connection_fd, char * buf, uint len);
+int ws_get_body(char * buf, uint len);
+int is_ws_request(char * buf, uint len);
+
+
 int
 new_pty(char * cmd, int connection_fd) {
     // Start new pty
     int pid;
     PTY * pty;
-    
+
     // Malloc memory for struct pty and check for error
     if((pty = (PTY *) malloc(sizeof(PTY))) == NULL) {
         perror("Error in malloc for pty struct");
@@ -117,9 +123,9 @@ init_pty(PTY * pty, int connection_fd) {
 int
 pty_loop(PTY * pty, int connection_fd) {
     //Manage pty input/output
-    int i;
-    int done = 0;
+    int len;
     int r;
+    int done = 0;
 
     do {
         r = poll(pty->ufds, 2, -1);
@@ -149,22 +155,30 @@ pty_loop(PTY * pty, int connection_fd) {
         }
 
         if (pty->ufds[1].revents & POLLIN) {
-             i = read (pty->master, pty->buf, REQUESTSIZE);
-             if (i >= 1) {
-                 //write(STDOUT_FILENO, pty->buf, i);
-             } else {
-                 done = 1;
-             }
+            len = read (pty->master, pty->buf, REQUESTSIZE);
+            if (len >= 1) {
+                //write(STDOUT_FILENO, pty->buf, len);
+                ws_send(connection_fd, pty->buf, len);
+            } else {
+                done = 1;
+            }
         }
 
         if (pty->ufds[0].revents & POLLIN) {
-             i = read (connection_fd, pty->buf, REQUESTSIZE);
-             if (i >= 1) {
-                 printf("%s", pty->buf);
-                 //write(pty->master, pty->buf, i);
-             } else {
-                  done = 1;
-             }
+            len = read (connection_fd, pty->buf, REQUESTSIZE);
+            if (len >= 1) {
+                //write(pty->master, pty->buf, len);
+                if (is_ws_request(pty->buf, len)){
+                    len = ws_get_body(pty->buf, len);
+                    if (len >= 1) {
+                        write(pty->master, pty->buf, len);
+                    }
+                } else{
+                    http_response(connection_fd, pty->buf, len);
+                } 
+            } else {
+                 done = 1;
+            }
         }
     } while (!done);
 
