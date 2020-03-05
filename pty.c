@@ -89,7 +89,7 @@ new_pty(char * cmd, int connection_fd) {
 int 
 shell_run(char * cmd) {
     //Start shell
-    execl(cmd, cmd, 0);
+    execl(cmd, cmd, NULL);
     return 1;
 }
 
