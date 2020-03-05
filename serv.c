@@ -1,6 +1,5 @@
 #include "include.h"
 
-#include <string.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -8,10 +7,11 @@
 
 int readfile(char * buf, char * path);
 int get_msg_body(char * buf, char * path, char * type);
-int request_response(int connection_fd, char * buffer);
+int request_response(int connection_fd, char * buffer, uint len);
 int init_listener(char * ip_addr, char * port);
 int get_connection(int listener_fd);
 int http_response(int connection_fd, char * buf, uint len);
+int is_http_request(char * buf, uint len);
 
 int is_ws_request(char * buf, uint len);
 int ws_init_connection(int connection_fd, char * buffer, uint len);
@@ -68,59 +68,66 @@ get_msg_body(char * buf, char * path, char * type) {
     return 0;
 }
 
-int http_response(int connection_fd, char * buf, uint len) {
+
+int is_http_request(char * buf, uint len) {
+    if (!strncmp(buf, "GET ", 4)) {
+        return 1;    
+    }
+    return 0;
+}
+
+int http_response(int connection_fd, char * buffer, uint len) {
+    //Send msg
+    int res, pathlen, dirlen;
+    char buf[MSGSIZE];
+    char type[TYPESIZE];
+    char path[PATHSIZE] = CLIENTDIR;
+
+    dirlen = strlen(path);
+    pathlen = strchr(&buffer[4], ' ') - &buffer[4];
+    strncpy(&path[dirlen], &buffer[4], pathlen);
+    path[dirlen + pathlen] = 0;
+    printf("%s\n", path);
+
+    if(path[strlen(path) - 1] == '/'){
+        strcpy(&path[strlen(path)], "index.html");
+    }
+
+    pathlen = strlen(path);
+
+    if(!strcmp(".html", &path[pathlen - 5]))
+        strcpy(type, "text/html");
+    else if(!strcmp(".js", &path[pathlen - 3]))
+        strcpy(type, "application/javascript");
+    else if(!strcmp(".css", &path[pathlen - 4]))
+        strcpy(type, "text/css");
+    else if(!strcmp(".ico", &path[pathlen - 4]))
+        strcpy(type, "image/vnd.microsoft.icon");
+    else {
+        strcpy(type, "text/plain");
+    }
+
+    printf("type - %s\n\n", type);
+
+    res = get_msg_body(buf, path, type);
+    if(res == 0){
+        write(connection_fd, buf, strlen(buf));
+    } else {
+        printf("404 - %s\n", path);
+        res = get_msg_body(buf, "client/404.html", "text/html");
+        write(connection_fd, buf, strlen(buf));
+    }
     return 0;
 }
 
 int
-request_response(int connection_fd, char * buffer) {
-    if (!strncmp(buffer, "GET ", 4)) {
-        if (strstr(buffer, "Upgrade: websocket") == NULL){
-            //Send msg
-            int res, pathlen, dirlen;
-            char buf[MSGSIZE];
-            char type[TYPESIZE];
-            char path[PATHSIZE] = "client";
-
-            dirlen = strlen(path);
-            pathlen = strchr(&buffer[4], ' ') - &buffer[4];
-            strncpy(&path[dirlen], &buffer[4], pathlen);
-            path[dirlen + pathlen] = 0;
-            printf("%s\n", path);
-
-            if(path[strlen(path) - 1] == '/'){
-                strcpy(&path[strlen(path)], "index.html");
-            }
-
-            pathlen = strlen(path);
-
-            if(!strcmp(".html", &path[pathlen - 5]))
-                strcpy(type, "text/html");
-            else if(!strcmp(".js", &path[pathlen - 3]))
-                strcpy(type, "application/javascript");
-            else if(!strcmp(".css", &path[pathlen - 4]))
-                strcpy(type, "text/css");
-            else if(!strcmp(".ico", &path[pathlen - 4]))
-                strcpy(type, "image/vnd.microsoft.icon");
-            else {
-                strcpy(type, "text/plain");
-            }
-
-            printf("type - %s\n\n", type);
-
-            res = get_msg_body(buf, path, type);
-            if(res == 0){
-                write(connection_fd, buf, strlen(buf));
-            } else {
-                printf("404 - %s\n", path);
-                res = get_msg_body(buf, "client/404.html", "text/html");
-                write(connection_fd, buf, strlen(buf));
-            }
-        } else if (is_ws_request(buffer, strlen(buffer))){
-            printf("ws socket open\n\n");
-            ws_init_connection(connection_fd, buffer, strlen(buffer));
-            //return connection_fd;
-        }
+request_response(int connection_fd, char * buffer, uint len) {
+    if (is_ws_request(buffer, len)) {
+        printf("ws socket open\n\n");
+        ws_init_connection(connection_fd, buffer, strlen(buffer));
+        //return connection_fd;
+    } else if (is_http_request(buffer, len)) {
+        http_response(connection_fd, buffer, len);
     } else {
         printf("Bad request\n\n%s\n", buffer);
     }
@@ -177,6 +184,9 @@ get_connection(int listener_fd) {
     int addrlen;
     int connection_fd;
 
+    uint len;
+    char buffer[REQUESTSIZE] = {0};
+
     //Connecting
     if ((connection_fd = accept(listener_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
         perror("In accept");
@@ -188,13 +198,12 @@ get_connection(int listener_fd) {
         perror("setsockopt(SO_REUSEADDR) failed");
 
     //Get request content
-    char buffer[REQUESTSIZE] = {0};
-    if (read(connection_fd, buffer, REQUESTSIZE) < 0) {
+    if ((len = read(connection_fd, buffer, REQUESTSIZE)) < 0) {
         printf("No bytes are there to read\n\n");
         close(connection_fd);
         return -1;
     }
     //printf("%s", buffer);
 
-    return request_response(connection_fd, buffer);
+    return request_response(connection_fd, buffer, len);
 }

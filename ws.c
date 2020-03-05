@@ -19,5 +19,8 @@ int ws_get_body(char * buf, uint len) {
 }
 
 int is_ws_request(char * buf, uint len) {
-    return 1;
+    if (strstr(buf, "Upgrade: websocket") != NULL){
+        return 1;    
+    }
+    return 0;
 }
