@@ -32,6 +32,7 @@ int http_response(int connection_fd, char * buf, uint len);
 int ws_send(int connection_fd, char * buf, uint len);
 int ws_get_body(char * buf, uint len);
 int is_ws_request(char * buf, uint len);
+int is_http_request(char * buf, uint len);
 
 
 int
@@ -168,14 +169,16 @@ pty_loop(PTY * pty, int connection_fd) {
             len = read (connection_fd, pty->buf, REQUESTSIZE);
             if (len >= 1) {
                 //write(pty->master, pty->buf, len);
-                if (is_ws_request(pty->buf, len)){
+                if (is_ws_request(pty->buf, len)) {
                     len = ws_get_body(pty->buf, len);
                     if (len >= 1) {
                         write(pty->master, pty->buf, len);
                     }
-                } else{
+                } else if (is_http_request(pty->buf, len)) {
                     http_response(connection_fd, pty->buf, len);
-                } 
+                } else {
+                    printf("Bad request in pty connection\n");
+                }
             } else {
                  done = 1;
             }
