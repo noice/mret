@@ -18,6 +18,7 @@ typedef struct {
     uint32_t count[2];
     unsigned char buffer[64];
 } SHA1_CTX;
+
 void SHA1Transform( uint32_t state[5], const unsigned char buffer[64]) {
     uint32_t a, b, c, d, e;
     typedef union {
@@ -470,12 +471,10 @@ int main(int argc, char *argv[]) {
         error_log("listen.");
     }
 
-
     signal(SIGPIPE, SIG_IGN);
 
     char str_from_buf[FILESTR] = {0,};
     char result_file[FILESTR] = {0,};
-
 
     for(;;) {
         client_fd = accept(sock, (struct sockaddr *) &cli_addr, &sin_len);

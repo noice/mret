@@ -131,7 +131,10 @@ int
 request_response(int connection_fd, char * buffer, uint len) {
     if (is_ws_request(buffer, len)) {
         printf("ws socket open\n\n");
-        ws_init_connection(connection_fd, buffer, strlen(buffer));
+        if (ws_init_connection(connection_fd, buffer, strlen(buffer) == -1) {
+            perror("Error while setting ws connection");
+            return -1;
+        }
         //return connection_fd;
     } else if (is_http_request(buffer, len)) {
         http_response(connection_fd, buffer, len);
