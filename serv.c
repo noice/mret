@@ -6,7 +6,7 @@
 #define DOMAIN AF_INET
 
 int readfile(char * buf, char * path);
-int get_msg_body(char * buf, char * path, char * type);
+int get_msg_body(char * buf, uint len, char * path, char * type, int status);
 int request_response(int connection_fd, char * buffer, uint len);
 int init_listener(char * ip_addr, char * port);
 int get_connection(int listener_fd);
@@ -16,7 +16,7 @@ int is_http_request(char * buf, uint len);
 int is_ws_request(char * buf, uint len);
 int ws_init_connection(int connection_fd, char * buffer, uint len);
 
-const char * http_header                = "HTTP/1.1 200 OK";
+const char * http_header                = "HTTP/1.1 %d OK\n";
 const char * http_header_content_type   = "Content-Type: ";
 const char * http_header_content_length = "Content-Length: ";
 
@@ -44,7 +44,7 @@ readfile(char * buf, char * path) {
 }
 
 int 
-get_msg_body(char * buf, char * path, char * type) {
+get_msg_body(char * buf, uint len, char * path, char * type, int status) {
     //Get message body from file. 
     //html type - "text/html"
 
@@ -53,7 +53,7 @@ get_msg_body(char * buf, char * path, char * type) {
     if(readfile(buf, path) == -1)
         return -1;
 
-    sprintf(header, "%s\n", http_header);
+    sprintf(header, http_header, status);
     sprintf(&header[strlen(header)], "%s%s\n", http_header_content_type, type);
     sprintf(&header[strlen(header)], "%s%lu\n\n", http_header_content_length, strlen(buf));
     
@@ -109,12 +109,12 @@ int http_response(int connection_fd, char * buffer, uint len) {
 
     printf("type - %s\n\n", type);
 
-    res = get_msg_body(buf, path, type);
+    res = get_msg_body(buf, MSGSIZE, path, type, 200);
     if(res == 0){
         write(connection_fd, buf, strlen(buf));
     } else {
         printf("404 - %s\n", path);
-        res = get_msg_body(buf, "client/404.html", "text/html");
+        res = get_msg_body(buf, MSGSIZE, "client/404.html", "text/html", 404);
         write(connection_fd, buf, strlen(buf));
     }
     return 0;
