@@ -10,11 +10,16 @@
 #define PATHSIZE       256
 #define HEADERSIZE     2048
 #define REQUESTSIZE    8192
-#define MSGSIZE        65536 
+#define MSGSIZE        65536
 
+#define PONGRET        -10
 #define CLIENTDIR      "client"
 
 #define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
-
-typedef unsigned int uint;
+typedef unsigned char      uchar;
+typedef unsigned short     ushort;
+typedef unsigned int       uint;
+typedef unsigned long long ull;
+typedef unsigned float     ufloat;
+typedef unsigned double    udouble;

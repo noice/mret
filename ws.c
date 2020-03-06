@@ -1,8 +1,11 @@
 #include "include.h"
 
+char * sha1(char * buf);
+char * base64(char * buf);
 int ws_init_connection(int connection_fd, char * buf, uint len);
 int ws_send(int connection_fd, char * buf, uint len);
 int ws_get_body(char * buf, uint len);
+int ws_ping(int connection_fd);
 int is_ws_request(char * buf, uint len);
 
 char *
@@ -93,6 +96,43 @@ ws_send(int connection_fd, char * buf, uint len) {
 
 int 
 ws_get_body(char * buf, uint len) {
+    uchar fin    = buf[0] & 0x80;
+    uchar opcode = buf[0] & 0x0F;
+
+    //if FIN
+    if (fin){
+        switch(opcode){
+            case 0x1:
+                //Text data
+                break;
+            case 0x2:
+                //Binary data
+                break;
+            case 0x8:
+                //Close connection
+                break;
+            case 0x9:
+                //PING opcode(only server can ping)
+                printf("We get ping opcode. It's strange.\nO.o\n\n");
+                break;
+            case 0xA:
+                //PONG opcode
+                printf("We get pong opcode.\n\n");
+                return PINGRET;
+                break;
+            default:
+                printf("Uncorrect opcode - %X\n\n");
+                break;
+        }
+    } else {
+        //TODO
+        printf("Not FIN frame :(\n\n");
+    }
+    return 0;
+}
+
+int
+ws_ping(int connection_fd){
     return 0;
 }
 
@@ -117,9 +157,4 @@ is_ws_request(char * buf, uint len) {
     }
 
     return 1;
-}
-
-int
-is_ws_frame(char * buf, uint len) {
-    return 0;
 }
