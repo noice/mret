@@ -57,9 +57,9 @@ get_msg_body(char * buf, uint len, char * path, char * type, char * status) {
     if(read_ret < 0)
         return read_ret;
 
-    sprintf(header, "%s%s\n", http_header, status);
-    sprintf(&header[strlen(header)], "%s%s\n", http_header_content_type, type);
-    sprintf(&header[strlen(header)], "%s%lu\n\n", http_header_content_length, strlen(buf));
+    sprintf(header, "%s%s\r\n", http_header, status);
+    sprintf(&header[strlen(header)], "%s%s\r\n", http_header_content_type, type);
+    sprintf(&header[strlen(header)], "%s%lu\r\n\r\n", http_header_content_length, strlen(buf));
     
     //memcpy(&buf[strlen(header)], buf, strlen(buf)+1);
     char * from = &buf[strlen(buf)];
@@ -80,15 +80,15 @@ int is_http_request(char * buf, uint len) {
         return 0;
     }
 
-    if (strncmp(strchr(buf, '\n') - 9, "HTTP/1.1", 8)){
+    if (strncmp(strchr(buf, '\r') - 8, "HTTP/1.1", 8)){
         return 0;
     }
 
-    if ((r = strstr(buf, "websocket")) && r < strstr(buf, "\n\n")) {
+    if ((r = strstr(buf, "websocket")) && r < strstr(buf, "\r\n\r\n")) {
         return 0;
     }
 
-    if ((r = strstr(buf, "Sec-WebSocket-Key")) && r < strstr(buf, "\n\n")) {
+    if ((r = strstr(buf, "Sec-WebSocket-Key")) && r < strstr(buf, "\r\n\r\n")) {
         return 0;
     }
 
