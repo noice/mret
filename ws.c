@@ -66,6 +66,28 @@ ws_init_connection(int connection_fd, char * buf, uint len) {
 
 int 
 ws_send(int connection_fd, char * buf, uint len) {
+    unsigned char frame[MSGSIZE + 9];
+    uint framesize;
+
+    //       FIN+binary
+    frame[0] = 0x82;
+
+    if(len < 126){
+        //   mask == 0
+        frame[1] = len;
+        memcpy(&frame[2], buf, len);
+        framesize = len + 2;
+    } else if (len >= 126 && len <= 65535) {
+        frame[1] = 126;
+        frame[2] = (len >> 8);
+        frame[3] = (unsigned char) (~0) & len;
+        memcpy(&frame[4], buf, len);
+        framesize = len + 4;
+    } else {
+        printf("len' is sooo big - %d\n\n", len);
+    }
+
+    write(connection_fd, frame, framesize);
     return 0;
 }
 
