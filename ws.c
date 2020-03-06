@@ -17,11 +17,12 @@ base64(char * buf) {
 
 int  
 ws_init_connection(int connection_fd, char * buf, uint len) {
+    int i, j;
     char sec_key_guid[103]; // 76 (max base64 length) + 36 (guid) + 1 (\0) = 103
-    char *p_key;
-    char hash_res[20];
-    char base64_res[76];
-    char response_headers[97] = "HTTP/1.1 200 OK\r\n"    
+    char * p_key;
+    char * hash_res;
+    char * base64_res;
+    char response_headers[] = "HTTP/1.1 200 OK\r\n"   //Why not "HTTP/1.1 101 Switching Protocols\r\n" 
                                 "Upgrade: websocket\r\n" 
                                 "Connection: Upgrade\r\n"
                                 "Sec-WebSocket-Accept: ";
@@ -35,8 +36,8 @@ ws_init_connection(int connection_fd, char * buf, uint len) {
     }
 
     // Copy key to buffer after "Sec-WebSocket-Key"
-    for (int i = 20, int j = 0; p_key[i] != '\n'; i++, j++) {
-        sec_key[j] = p_key[i];
+    for (i = 20, j = 0; p_key[i] != '\n'; i++, j++) {
+        sec_key_guid[j] = p_key[i];
     }
 
     // Concatenate secrete_key with guid
@@ -49,7 +50,7 @@ ws_init_connection(int connection_fd, char * buf, uint len) {
     base64_res = base64(hash_res);
 
     // Forge response message
-    snprintf(response, (97 + strlen(base64_res) + 4), "%s%s%s", response_headers, key_out, "\r\n\r\n");
+    snprintf(response, (97 + strlen(base64_res) + 4), "%s%s%s", response_headers, base64_res, "\r\n\r\n");
 
     // Send response
     if (send(connection_fd, response, sizeof(char) * strlen(response), MSG_NOSIGNAL) == -1) {
@@ -72,13 +73,28 @@ ws_get_body(char * buf, uint len) {
 
 int 
 is_ws_request(char * buf, uint len) {
-    if (strstr(buf, "Upgrade: websocket") != NULL) {
-        return 1;    
+    char * r;
+
+    if (strncmp(buf, "GET ", 4)) {
+        return 0;
     }
-    return 0;
+
+    if (strncmp(strchr(buf, '\r') - 8, "HTTP/1.1", 8)){
+        return 0;
+    }
+
+    if (!(r = strstr(buf, "Upgrade: websocket")) || !(r < strstr(buf, "\r\n\r\n"))) {
+        return 0;
+    }
+
+    if (!(r = strstr(buf, "Sec-WebSocket-Key")) || !(r < strstr(buf, "\r\n\r\n"))) {
+        return 0;
+    }
+
+    return 1;
 }
 
 int
-is_ws_frame(char * buf, unint len) {
+is_ws_frame(char * buf, uint len) {
     return 0;
 }
