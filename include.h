@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
@@ -21,5 +22,3 @@ typedef unsigned char      uchar;
 typedef unsigned short     ushort;
 typedef unsigned int       uint;
 typedef unsigned long long ull;
-typedef unsigned float     ufloat;
-typedef unsigned double    udouble;
