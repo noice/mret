@@ -23,7 +23,6 @@ const char * http_header_content_length = "Content-Length: ";
 int 
 readfile(char * buf, char * path, uint bufsize) {
     //Read content from file in the buf
-    //TODO: Check bufsize, error handling
 
     int c;
     int i = 0;
@@ -75,10 +74,25 @@ get_msg_body(char * buf, uint len, char * path, char * type, char * status) {
 
 
 int is_http_request(char * buf, uint len) {
-    if (!strncmp(buf, "GET ", 4)) {
-        return 1;    
+    char * r;
+
+    if (strncmp(buf, "GET ", 4)) {
+        return 0;
     }
-    return 0;
+
+    if (strncmp(strchr(buf, '\n') - 9, "HTTP/1.1", 8)){
+        return 0;
+    }
+
+    if ((r = strstr(buf, "websocket")) && r < strstr(buf, "\n\n")) {
+        return 0;
+    }
+
+    if ((r = strstr(buf, "Sec-WebSocket-Key")) && r < strstr(buf, "\n\n")) {
+        return 0;
+    }
+
+    return 1;
 }
 
 int http_response(int connection_fd, char * buffer, uint len) {
