@@ -22,12 +22,12 @@ ws_init_connection(int connection_fd, char * buf, uint len) {
     char * p_key;
     char * hash_res;
     char * base64_res;
-    char response_headers[] = "HTTP/1.1 200 OK\r\n"   //Why not "HTTP/1.1 101 Switching Protocols\r\n" 
+    char response_headers[] = "HTTP/1.1 101 Switching Protocols\r\n"   //Why not "HTTP/1.1 101 Switching Protocols\r\n" 
                                 "Upgrade: websocket\r\n" 
                                 "Connection: Upgrade\r\n"
                                 "Sec-WebSocket-Accept: ";
-    // 97 (response headers) + 76 (max base64 length) + 4 (x2 CRLF) = 177
-    char response[177];
+    // 97 (response headers) + 76 (max base64 length) + 4 (x2 CRLF) + 1 (\0) = 178
+    char response[178];
 
     // Check if message contain field "Sec-WebSocket-Key"
     if ((p_key = strstr(buf, "Sec-WebSocket-Key:")) == NULL) {
@@ -36,7 +36,7 @@ ws_init_connection(int connection_fd, char * buf, uint len) {
     }
 
     // Copy key to buffer after "Sec-WebSocket-Key"
-    for (i = 20, j = 0; p_key[i] != '\n'; i++, j++) {
+    for (i = 20, j = 0; p_key[i] != '\n' || p_key[i] != '\r'; i++, j++) {
         sec_key_guid[j] = p_key[i];
     }
 
@@ -50,7 +50,10 @@ ws_init_connection(int connection_fd, char * buf, uint len) {
     base64_res = base64(hash_res);
 
     // Forge response message
-    snprintf(response, (97 + strlen(base64_res) + 4), "%s%s%s", response_headers, base64_res, "\r\n\r\n");
+    // 97 - strlen(response_headers)
+    // 4 - x2 CRLF
+    // 1 - '/0'
+    snprintf(response, (97 + strlen(base64_res) + 4 + 1), "%s%s%s", response_headers, base64_res, "\r\n\r\n");
 
     // Send response
     if (send(connection_fd, response, sizeof(char) * strlen(response), MSG_NOSIGNAL) == -1) {
