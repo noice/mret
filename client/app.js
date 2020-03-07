@@ -4,4 +4,4 @@ ws.onmessage = ({data}) => {
           console.log(data);
 }
 
-ws.onopen = () => ws.send('Text');
+ws.onopen = () => ws.send('echo "hello world!"\n');

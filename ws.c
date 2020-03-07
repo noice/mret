@@ -51,7 +51,7 @@ ws_init_connection(int connection_fd, char * buf, uint len) {
     char * p_key;
     char hash_res[21];
     char base64_res[29];
-    char response_headers[] =  "HTTP/1.1 101 Switching Protocols\r\n"
+    char response_headers[] =   "HTTP/1.1 101 Switching Protocols\r\n"
                                 "Upgrade: websocket\r\n" 
                                 "Connection: Upgrade\r\n"
                                 "Sec-WebSocket-Accept: ";
