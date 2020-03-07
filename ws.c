@@ -49,9 +49,9 @@ ws_init_connection(int connection_fd, char * buf, uint len) {
     int i, j;
     char sec_key_guid[61]; // 24 (secret key len) + 36 (guid) + 1 (\0) = 61
     char * p_key;
-    char hash_res[20];
-    char base64_res[28];
-    char response_headers[] = "HTTP/1.1 101 Switching Protocols\r\n"
+    char hash_res[21];
+    char base64_res[29];
+    char response_headers[] =   "HTTP/1.1 101 Switching Protocols\r\n"
                                 "Upgrade: websocket\r\n" 
                                 "Connection: Upgrade\r\n"
                                 "Sec-WebSocket-Accept: ";
