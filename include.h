@@ -13,6 +13,7 @@
 #define REQUESTSIZE    8192
 #define MSGSIZE        65536
 
+#define CLOSERET       -11
 #define PONGRET        -10
 #define CLIENTDIR      "client"
 

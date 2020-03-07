@@ -51,7 +51,7 @@ ws_init_connection(int connection_fd, char * buf, uint len) {
     char * p_key;
     char hash_res[21];
     char base64_res[29];
-    char response_headers[] =   "HTTP/1.1 101 Switching Protocols\r\n"
+    char response_headers[] =  "HTTP/1.1 101 Switching Protocols\r\n"
                                 "Upgrade: websocket\r\n" 
                                 "Connection: Upgrade\r\n"
                                 "Sec-WebSocket-Accept: ";
@@ -123,20 +123,39 @@ ws_send(int connection_fd, char * buf, uint len) {
 
 int 
 ws_get_body(char * buf, uint len) {
+    uint msg_len;
+    uchar mask;    
+    char * msg_begin;
+
     uchar fin    = buf[0] & 0x80;
     uchar opcode = buf[0] & 0x0F;
-
+    
     //if FIN
     if (fin){
         switch(opcode){
             case 0x1:
                 //Text data
-                break;
             case 0x2:
                 //Binary data
+                mask          = buf[1] & 0x80;
+                msg_len       = buf[1] & 0x7F;
+                msg_begin     = buf + (mask ? 6 : 2);
+                
+                if(msg_len == 126){
+                    msg_len   = ((uint)buf[2] << 8) + buf[3];
+                    msg_begin = msg_begin + 2; 
+                }
+
+                for(int i = 0; i < msg_len; ++i)
+                    buf[i] = msg_begin[i];
+                buf[msg_len] = 0;
+
+                return msg_len;
                 break;
             case 0x8:
                 //Close connection
+                printf("Closing connection...\n");
+                return CLOSERET;
                 break;
             case 0x9:
                 //PING opcode(only server can ping)
