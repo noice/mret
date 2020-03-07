@@ -66,7 +66,7 @@ ws_init_connection(int connection_fd, char * buf, uint len) {
     }
 
     // Copy key to buffer after "Sec-WebSocket-Key"
-    for (i = 20, j = 0; p_key[i] != '\n' || p_key[i] != '\r'; i++, j++) {
+    for (i = 19, j = 0; p_key[i] != '\n' && p_key[i] != '\r'; i++, j++) {
         sec_key_guid[j] = p_key[i];
     }
 
