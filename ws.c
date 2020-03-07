@@ -124,9 +124,10 @@ ws_send(int connection_fd, char * buf, uint len) {
 int 
 ws_get_body(char * buf, uint len) {
     uint msg_len;
-    uchar mask;    
+    uint f;
+    uchar maskbit;    
     char * msg_begin; 
-    char * mask_begin;
+    uchar mask[4];
 
     uchar fin    = buf[0] & 0x80;
     uchar opcode = buf[0] & 0x0F;
@@ -138,19 +139,23 @@ ws_get_body(char * buf, uint len) {
                 //Text data
             case 0x2:
                 //Binary data
-                mask           = buf[1] & 0x80;
+                maskbit        = buf[1] & 0x80;
                 msg_len        = buf[1] & 0x7F;
-                msg_begin      = buf + (mask ? 6 : 2);
-                mask_begin     = buf + 2;
-                
-                if(msg_len == 126){
+
+                if(msg_len < 126) {
+                    msg_begin  = buf + (maskbit ? 6 : 2);
+
+                    memcpy(mask, buf + 2, 4);
+                } else if(msg_len == 126) {
                     msg_len    = ((uint)buf[2] << 8) + buf[3];
                     msg_begin  = msg_begin + 2; 
-                    mask_begin = buf + 4;
+
+                    memcpy(mask, buf + 4, 4);
                 }
 
-                for(int i = 0; i < msg_len; ++i)
-                    buf[i] = msg_begin[i] ^ mask_begin[i % 4];
+                for(uint i = 0; i < msg_len; ++ i) {
+                    buf[i] = msg_begin[i] ^ mask[i & 3];
+                }
                 buf[msg_len] = 0;
 
                 return msg_len;

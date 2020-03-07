@@ -167,8 +167,8 @@ pty_loop(PTY * pty, int connection_fd) {
 
         if (pty->ufds[0].revents & POLLIN) {
             len = read (connection_fd, pty->buf, REQUESTSIZE);
-            for(int it = 0; it < len; ++ it)
-                printf("%X\n", pty->buf[it]);
+            //for(int it = 0; it < len; ++ it)
+            //    printf("%X\n", pty->buf[it]);
             if (len >= 1) {
                 //write(pty->master, pty->buf, len);
                 if (!is_http_request(pty->buf, len)) {
