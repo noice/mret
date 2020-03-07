@@ -100,7 +100,7 @@ ws_send(int connection_fd, char * buf, uint len) {
     uint framesize;
 
     //       FIN+binary
-    frame[0] = 0x82;
+    frame[0] = 0x81;
 
     if(len < 126){
         //   mask == 0
