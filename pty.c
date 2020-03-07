@@ -167,17 +167,18 @@ pty_loop(PTY * pty, int connection_fd) {
 
         if (pty->ufds[0].revents & POLLIN) {
             len = read (connection_fd, pty->buf, REQUESTSIZE);
+            for(int it = 0; it < len; ++ it)
+                printf("%X\n", pty->buf[it]);
             if (len >= 1) {
                 //write(pty->master, pty->buf, len);
-                if (is_ws_request(pty->buf, len)) {
+                if (!is_http_request(pty->buf, len)) {
                     len = ws_get_body(pty->buf, len);
                     if (len >= 1) {
+                        printf("Get msg - %s\n", pty->buf);
                         write(pty->master, pty->buf, len);
                     }
-                } else if (is_http_request(pty->buf, len)) {
-                    http_response(connection_fd, pty->buf, len);
                 } else {
-                    printf("Bad request in pty connection\n");
+                    http_response(connection_fd, pty->buf, len);
                 }
             } else {
                  done = 1;
