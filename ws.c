@@ -99,7 +99,7 @@ ws_send(int connection_fd, char * buf, uint len) {
     unsigned char frame[MSGSIZE + 9];
     uint framesize;
 
-    //       FIN+binary
+    //       FIN+text
     frame[0] = 0x81;
 
     if(len < 126){
@@ -186,9 +186,35 @@ ws_get_body(char * buf, uint len) {
 }
 
 int
-ws_ping(int connection_fd){
+ws_ping(int connection_fd) {
+    // |FIN RSV1 RSV2 RSV3| OPCODE| MASK BODYLENGTH| BODY  |
+    // |1   0    0    0   | 1001  | 0    000| 0101 | "Mret"|
+    // |         8        |   9   |    0    |  5   |       |
+    char ping[] = {0x89, 0x05, 'M', 'r', 'e', 't'}; // Length 7
+    if (send(connection_fd, ping, 7, 0) == 1) {
+        perror("Error while sending PING");
+        return -1;
+    }
+
     return 0;
 }
+
+int
+ws_pong(int connection_fd) {
+    // |FIN RSV1 RSV2 RSV3| OPCODE| MASK BODYLENGTH| BODY  |
+    // |1   0    0    0   | 1010  | 0    000| 0101 | "Mret"|
+    // |         8        |   A   |    0    |  5   |       |
+    char pong[] = {0x8A, 0x05, 'M', 'r', 'e', 't'}; // Length 7
+    if (send(connection_fd, pong, 7, 0) == 1) {
+        perror("Error while sending P0NG");
+        return -1;
+    }
+
+    return 0;
+}
+
+
+// ------------------------------------------ Additional funcs
 
 int 
 is_ws_request(char * buf, uint len) {
