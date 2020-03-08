@@ -9,6 +9,7 @@ ws.onmessage = function(data) {
 }
 
 function showMessage(message) {
+    message = message.replace(' ', '\xa0')
     let messagesplit = message.split('\n');
     let first = messagesplit.shift();
 
@@ -26,6 +27,8 @@ function showMessage(message) {
         messageElem.appendChild(document.createTextNode(it));
         terminal.appendChild(messageElem);
     }
+
+    window.scrollTo(0,document.body.scrollHeight);
 }
 
 

@@ -157,8 +157,8 @@ pty_loop(PTY * pty, int connection_fd) {
 
         if (pty->ufds[1].revents & POLLIN) {
             len = read (pty->master, pty->buf, REQUESTSIZE);
+
             if (len >= 1) {
-                //write(STDOUT_FILENO, pty->buf, len);
                 ws_send(connection_fd, pty->buf, len);
             } else {
                 done = 1;
@@ -167,17 +167,16 @@ pty_loop(PTY * pty, int connection_fd) {
 
         if (pty->ufds[0].revents & POLLIN) {
             len = read (connection_fd, pty->buf, REQUESTSIZE);
-            //for(int it = 0; it < len; ++ it)
-            //    printf("%X\n", pty->buf[it]);
+
             if (len >= 1) {
-                //write(pty->master, pty->buf, len);
                 if (!is_http_request(pty->buf, len)) {
+                    //ws frame
                     len = ws_get_body(pty->buf, len);
                     if (len >= 1) {
-                        printf("Get msg - %s\n", pty->buf);
                         write(pty->master, pty->buf, len);
                     }
                 } else {
+                    //http request
                     http_response(connection_fd, pty->buf, len);
                 }
             } else {
