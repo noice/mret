@@ -1,0 +1,9 @@
+body{
+    background-color: black;
+}
+
+.terminal {
+    color:            white;
+    font-family:      monospace;
+    font-size:        11pt;
+}

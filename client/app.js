@@ -56,9 +56,25 @@ function handle(e) {
                     ws.send(String.fromCharCode(e.code.charCodeAt(3) - 'A'.charCodeAt(0) + 1));
                 }
             }
-        } else if(e.key == "Enter") {
-            ws.send('\n');
-        }
+        } else switch(e.key) {
+            case "Enter":
+                ws.send('\n');
+                break;
+            case "Escape":
+                ws.send("\x1B");
+                break;
+            case "Backspace":
+                ws.send("\x08");
+                break;
+            case "Tab":
+                ws.send("\x09");
+                break;
+            case "Delete":
+                ws.send("\x7F");
+                break;
+            default:
+                break;
+        } 
     }
 
     lastTime = Date.now();
