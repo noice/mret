@@ -9,7 +9,6 @@ ws.onmessage = function(data) {
 }
 
 function showMessage(message) {
-    message = message.replace(' ', '\xa0')
     let messagesplit = message.split('\n');
     let first = messagesplit.shift();
 
@@ -50,21 +49,20 @@ function handle(e) {
     */
     if(e.type == "keydown"){
         if(e.key.length == 1){
-            ws.send(e.key);
+            if(!e.ctrlKey){
+                ws.send(e.key);
+            } else {
+                if(e.code.startsWith("Key")){
+                    ws.send(String.fromCharCode(e.code.charCodeAt(3) - 'A'.charCodeAt(0) + 1));
+                }
+            }
         } else if(e.key == "Enter") {
             ws.send('\n');
         }
     }
 
     lastTime = Date.now();
-
-    /*area.value += text;
-
-    if (form.elements[e.type + 'Stop'].checked) {
-            e.preventDefault();
-    }*/
 }
 
-//function keyListener(e){}
 addEventListener("keydown", handle);
 //ws.onopen = () => ws.send('echo "hello world!"\n');
