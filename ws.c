@@ -162,7 +162,6 @@ ws_get_body(char * buf, uint len) {
                 break;
             case 0x8:
                 //Close connection
-                printf("Closing connection...\n");
                 return CLOSERET;
                 break;
             case 0x9:
@@ -213,9 +212,6 @@ ws_pong(int connection_fd) {
     return 0;
 }
 
-
-// ------------------------------------------ Additional funcs
-
 int 
 is_ws_request(char * buf, uint len) {
     char * r;
@@ -238,6 +234,21 @@ is_ws_request(char * buf, uint len) {
 
     return 1;
 }
+
+int
+ws_close(int connection_fd) {
+    printf("Closing socket...\n");
+    if (close(connection_fd) == - 1) {
+        perror("Error while closing WebSocket");
+        return -1;
+    }
+
+    return 0;
+}
+
+
+// --------------------------------------------------- Additional funcs
+
 
 void 
 SHA1Transform(uint32_t state[5], const uchar buffer[64]) {
