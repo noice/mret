@@ -162,6 +162,7 @@ ws_get_body(char * buf, uint len) {
                 break;
             case 0x8:
                 //Close connection
+                printf("Closeret opcode");
                 return CLOSERET;
                 break;
             case 0x9:

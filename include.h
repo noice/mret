@@ -4,8 +4,11 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 
 #define TYPESIZE       32
 #define PATHSIZE       256

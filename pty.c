@@ -20,6 +20,7 @@ int new_pty(char * cmd, int connection_fd);
 int shell_run(char * cmd);
 int init_pty(PTY * pty, int connection_fd);
 int pty_loop(PTY * pty, int connection_fd);
+int pty_close(PTY * pty, int connection_fd);
 
 volatile int propagate_sigwinch = 0; // If 1, then call ioctl to change winsize
 
@@ -32,6 +33,7 @@ int http_response(int connection_fd, char * buf, uint len);
 int ws_send(int connection_fd, char * buf, uint len);
 int ws_get_body(char * buf, uint len);
 int is_ws_request(char * buf, uint len);
+int ws_close(int connection_fd);
 int is_http_request(char * buf, uint len);
 
 
@@ -62,13 +64,13 @@ new_pty(char * cmd, int connection_fd) {
     }
 
     // p1 returns pid for pty process and waits for new connections
-    if(pid) {
+    if (pid) {
         return pid;
     }
 
     // p2 create pty process
     if ((pty->pid = forkpty(&pty->master, NULL, NULL, &pty->ws)) < 0) {
-        perror("ptypair");
+        perror("Error in ptypair");
         exit(1);
     }
 
@@ -81,14 +83,14 @@ new_pty(char * cmd, int connection_fd) {
     init_pty(pty, connection_fd);
     pty_loop(pty, connection_fd);
 
-    close(connection_fd);
+    // close(connection_fd);
     free(pty);
     exit(0);
 }
 
 int 
 shell_run(char * cmd) {
-    //Start shell
+    // Start shell
     execl(cmd, cmd, NULL);
     return 1;
 }
@@ -118,6 +120,49 @@ init_pty(PTY * pty, int connection_fd) {
     pty->ufds[1].fd = pty->master;
     pty->ufds[1].events = POLLIN;
     
+    return 0;
+}
+
+int
+pty_close(PTY * pty, int connection_fd) {
+    // Wait for terminating the process which executes commands
+    int w;
+    int status;
+    time_t t1, t2;
+    
+    kill(pty->pid, SIGTERM);
+    if ((t1 = time(0)) == -1) {
+        perror("Error while getting time");
+        return -1;
+    }
+    do {
+        if ((t2 = time(0)) == -1) {
+            perror("Error while getting time");
+            return -1;
+        }
+
+        w = waitpid(pty->pid, &status, 0);
+        if (w == -1) {
+            perror("Error while waiting");
+            return -1;
+        }
+        
+        // If waiting is longer than 10 seconds, then send SIGKILL
+        if ((t2 - t1) > 10) {
+            kill(pty->pid, SIGKILL);
+            break;
+        }
+
+
+    } while(!WIFEXITED(status) && !WIFSIGNALED(status));
+    printf("Pty was closed");
+
+    // Close connection
+    if (ws_close(connection_fd) == -1) {
+        return -1;
+    }
+    printf("Conn was closed");
+
     return 0;
 }
 
@@ -156,7 +201,7 @@ pty_loop(PTY * pty, int connection_fd) {
         }
 
         if (pty->ufds[1].revents & POLLIN) {
-            len = read (pty->master, pty->buf, REQUESTSIZE);
+            len = read(pty->master, pty->buf, REQUESTSIZE);
 
             if (len >= 1) {
                 ws_send(connection_fd, pty->buf, len);
@@ -166,7 +211,7 @@ pty_loop(PTY * pty, int connection_fd) {
         }
 
         if (pty->ufds[0].revents & POLLIN) {
-            len = read (connection_fd, pty->buf, REQUESTSIZE);
+            len = read(connection_fd, pty->buf, REQUESTSIZE);
 
             if (len >= 1) {
                 if (!is_http_request(pty->buf, len)) {
@@ -174,6 +219,14 @@ pty_loop(PTY * pty, int connection_fd) {
                     len = ws_get_body(pty->buf, len);
                     if (len >= 1) {
                         write(pty->master, pty->buf, len);
+                    // If was returned CLOSERET, close pty
+                    } else if (len == CLOSERET) {
+                        printf("CLOSERET");
+                        if (pty_close(pty, connection_fd) == -1) {
+                            exit(-1);
+                        }
+
+                        exit(0);
                     }
                 } else {
                     //http request

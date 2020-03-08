@@ -1,6 +1,5 @@
 #include "include.h"
 
-#include <signal.h>
 #include <sys/wait.h>
 
 int new_pty(char *, int);
