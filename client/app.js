@@ -1,6 +1,5 @@
 var ws = new WebSocket("ws://localhost:8080");
 var inputText = "";
-var terminal = document.getElementById('terminal');
 
 var dcolor = 'white';
 var acolor = dcolor;
@@ -10,12 +9,18 @@ var brightness = 0;
 var dbgcolor = 'black';
 var abgcolor = dbgcolor;
 
+var curcolor = dcolor;
+var curbgcolor = dbgcolor;
+
+var dcurcolor = 'black';
+var dcurbgcolor = 'white';
+
 var colormap = {
     0: 'black',
     1: 'maroon',
     2: 'green',
     3: 'olive',
-    4: 'navy',
+    4: 'blue',
     5: 'purple',
     6: 'teal',
     7: 'silver'
@@ -26,11 +31,29 @@ var brcolormap = {
     1: 'red',
     2: 'lime',
     3: 'yellow',
-    4: 'blue',
+    4: 'cornflowerblue',
     5: 'magenta',
     6: 'cyan',
     7: 'white'
 };
+
+var curx;
+var cury;
+var terminal;
+init();
+
+function init() {
+    curx = 0;
+    cury = 0;
+
+    terminal = document.getElementById('terminal');
+    terminal.appendChild(document.createElement('div'));
+    let charElem = document.createElement('span');
+    charElem.appendChild(document.createTextNode('\xA0'));
+    charElem.style.color = dcurcolor;
+    charElem.style.backgroundColor = dcurbgcolor;
+    terminal.lastElementChild.appendChild(charElem);
+}
 
 ws.onmessage = function(data) {
     //console.log(data);
@@ -120,6 +143,19 @@ function handleEscape(message) {
     return result[0].length - 1;
 }
 
+function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
+    prevcur = terminal.childNodes[prevcury].childNodes[prevcurx];
+    prevcur.style.color = curcolor;
+    prevcur.style.backgroundColor = curbgcolor;
+
+    newcur = terminal.childNodes[newcury].childNodes[newcurx];
+    curcolor = newcur.style.color;
+    curbgcolor = newcur.style.backgroundColor;
+
+    newcur.style.color = dcurcolor;
+    newcur.style.backgroundColor = dcurbgcolor;
+}
+
 function showMessage(message) {
     /*let messagesplit = message.split('\n');
 
@@ -134,10 +170,12 @@ function showMessage(message) {
     }*/
     
     if(!terminal.lastElementChild){
-        terminal.appendChild(document.createElement('div'));
+        init();
     }
 
     for(let i = 0; i < message.length; i ++){
+        let curdiv;
+        let charElem;
         switch(message[i]){
             case '\x1B':
                 if(message[i + 1] != '[')
@@ -148,15 +186,36 @@ function showMessage(message) {
                 break;
 
             case '\n':
-                terminal.appendChild(document.createElement('div'));
+                curdiv = terminal.childNodes[cury]
+                if(curdiv.nextSibling)
+                    terminal.insertBefore(document.createElement('div'), curdiv.nextSibling);
+                else
+                    terminal.appendChild(document.createElement('div'));
+
+                charElem = document.createElement('span');
+                charElem.appendChild(document.createTextNode('\xA0'));
+                charElem.style.color = dcolor;
+                charElem.style.backgroundColor = dbgcolor;
+                curdiv.nextSibling.appendChild(charElem);
+
+                changeCurPos(curx, cury, 0, cury + 1);
+                
+                curdiv.removeChild(curdiv.lastElementChild);
+                
+                curx  = 0;
+                cury += 1;
                 break;
 
             default:
-                let charElem = document.createElement('span');
+                curdiv = terminal.childNodes[cury];
+
+                charElem = document.createElement('span');
                 charElem.appendChild(document.createTextNode(message[i]));
                 charElem.style.color = acolor;
-                charElem.style.backgroundColor = dbgcolor;
-                terminal.lastElementChild.appendChild(charElem);
+                charElem.style.backgroundColor = abgcolor;
+                curdiv.insertBefore(charElem, curdiv.childNodes[curx]);
+                
+                curx += 1;
                 break;
         }
     }
