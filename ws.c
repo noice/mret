@@ -41,6 +41,7 @@ int ws_init_connection(int connection_fd, char * buf, uint len);
 int ws_send(int connection_fd, char * buf, uint len);
 int ws_get_body(char * buf, uint len);
 int ws_ping(int connection_fd);
+int ws_pong(int connection_fd);
 int is_ws_request(char * buf, uint len);
 
 
@@ -178,6 +179,7 @@ ws_get_body(char * buf, uint len) {
             case 0x9:
                 //PING opcode(only server can ping)
                 printf("We get ping opcode. It's strange.\nO.o\n\n");
+                return PINGRET;
                 break;
             case 0xA:
                 //PONG opcode

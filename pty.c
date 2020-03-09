@@ -40,6 +40,7 @@ int ws_get_body(char * buf, uint len);
 int is_ws_request(char * buf, uint len);
 int ws_close(int connection_fd);
 int ws_ping(int connection_fd);
+int ws_pong(int connection_fd);
 int is_http_request(char * buf, uint len);
 
 
@@ -88,10 +89,6 @@ new_pty(char * cmd, int connection_fd) {
 
     init_pty(pty, connection_fd);
     pty_loop(pty, connection_fd);
-
-    // close(connection_fd);
-    free(pty);
-    exit(0);
 }
 
 int 
@@ -144,18 +141,15 @@ pty_close(PTY * pty, int connection_fd) {
     kill(pty->pid, SIGTERM);
     if ((t1 = time(0)) == -1) {
         perror("Error while getting time");
-        return -1;
     }
     do {
         if ((t2 = time(0)) == -1) {
             perror("Error while getting time");
-            return -1;
         }
 
         w = waitpid(pty->pid, &status, 0);
         if (w == -1) {
             perror("Error while waiting");
-            return -1;
         }
         
         // If waiting is longer than 10 seconds, then send SIGKILL
@@ -169,12 +163,11 @@ pty_close(PTY * pty, int connection_fd) {
     printf("Pty was closed\n");
 
     // Close connection
-    if (ws_close(connection_fd) == -1) {
-        return -1;
-    }
+    ws_close(connection_fd);
     printf("Conn was closed\n");
 
-    return 0;
+    free(pty);
+    exit(0);
 }
 
 int
@@ -259,6 +252,9 @@ pty_loop(PTY * pty, int connection_fd) {
                     } else if (len == PONGRET) {
                         printf("PONG :)\n");
                         ping_pong_interval1 = time(0);
+                    } else if (len == PINGRET) {
+                        printf("PONG for PING\n");
+                        ws_pong(connection_fd);
                     }
                 } else {
                     //http request

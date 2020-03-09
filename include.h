@@ -18,6 +18,7 @@
 
 #define CLOSERET       -11
 #define PONGRET        -10
+#define PINGRET        -12
 #define CLIENTDIR      "client"
 
 #define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
