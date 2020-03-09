@@ -5,13 +5,80 @@ var terminal = document.getElementById('terminal');
 var dcolor = 'white';
 var acolor = dcolor;
 
+var brightness = 0;
+
 var dbgcolor = 'black';
 var abgcolor = dbgcolor;
+
+var colormap = {
+    0: 'black',
+    1: 'maroon',
+    2: 'green',
+    3: 'olive',
+    4: 'navy',
+    5: 'purple',
+    6: 'teal',
+    7: 'silver'
+};
+
+var brcolormap = {
+    0: 'gray',
+    1: 'red',
+    2: 'lime',
+    3: 'yellow',
+    4: 'blue',
+    5: 'magenta',
+    6: 'cyan',
+    7: 'white'
+};
 
 ws.onmessage = function(data) {
     //console.log(data);
     let incomingMessage = data.data;
     showMessage(incomingMessage);
+}
+
+function handleCGR(buf) {
+    for(let it of buf) {
+        switch(it) {
+            case 0:
+                acolor = dcolor;
+                abgcolor = dbgcolor;
+                brightness = 0;
+                break;
+            case 1:
+                brightness = 1;
+                break;
+            case 30:
+            case 31:
+            case 32:
+            case 33:
+            case 34:
+            case 35:
+            case 36:
+            case 37:
+                if(brightness)
+                    acolor = brcolormap[it % 10];
+                else 
+                    acolor =   colormap[it % 10];
+                break;
+            case 40:
+            case 41:
+            case 42:
+            case 43:
+            case 44:
+            case 45:
+            case 46:
+            case 47:
+                if(brightness)
+                    abgcolor = brcolormap[it % 10];
+                else 
+                    abgcolor =   colormap[it % 10];
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 function handleEscape(message) {
@@ -25,11 +92,30 @@ function handleEscape(message) {
         default:
             break;
     }*/
-    let result = message.match(/\x1B\[\??(([0-9]*)(?:\;([0-9]*))*)([ABCDEFGHJKSTfmnsulh])/);
-
+    let regex = /\x1B\[\??((?:\d*)(?:\;(?:\d*))*)([ABCDEFGHJKSTfmnsulh])/; 
+    let result = regex.exec(message);
 
     if(!result)
         return 0;
+
+    let buf = result[1].split(';');
+    let code = result[2];
+
+    for(let i = 0; i < buf.length; i ++) {
+        if(buf[i]){
+            buf[i] = Number(buf[i]);
+        } else {
+            buf[i] = 0;
+        }
+    }
+
+    switch(code){
+        case 'm':
+            handleCGR(buf);
+            break;
+        default:
+            break;
+    }
 
     return result[0].length - 1;
 }
