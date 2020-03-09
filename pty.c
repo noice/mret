@@ -23,10 +23,15 @@ int pty_loop(PTY * pty, int connection_fd);
 int pty_close(PTY * pty, int connection_fd);
 
 volatile int propagate_sigwinch = 0; // If 1, then call ioctl to change winsize
+volatile int propagate_sigterm = 0;  // If 1, then call ioctl to exit
 
 void 
-sigwinch_handler(int signal) { // Handler for SIGWINCH
-    propagate_sigwinch = 1;
+signal_handler(int signal) { // Handler for SIGWINCH
+    if (signal == SIGWINCH) {
+        propagate_sigwinch = 1;
+    } else if (signal == SIGTERM) {
+        propagate_sigterm = 1;
+    }
 }
 
 int http_response(int connection_fd, char * buf, uint len);
@@ -34,6 +39,7 @@ int ws_send(int connection_fd, char * buf, uint len);
 int ws_get_body(char * buf, uint len);
 int is_ws_request(char * buf, uint len);
 int ws_close(int connection_fd);
+int ws_ping(int connection_fd);
 int is_http_request(char * buf, uint len);
 
 
@@ -98,11 +104,16 @@ shell_run(char * cmd) {
 int 
 init_pty(PTY * pty, int connection_fd) {
     //Initialize pty
-    pty->act.sa_handler = sigwinch_handler;
+    pty->act.sa_handler = signal_handler;
     sigemptyset(&(pty->act.sa_mask));
     pty->act.sa_flags = 0;
     if (sigaction(SIGWINCH, &pty->act, NULL) < 0) {
         perror("ptypair: невозможно обработать SIGWINCH");
+        return 1;
+    }
+
+    if (sigaction(SIGTERM, &pty->act, NULL) < 0) {
+        perror("ptypair: невозможно обработать SIGWTERM");
         return 1;
     }
 
@@ -155,13 +166,13 @@ pty_close(PTY * pty, int connection_fd) {
 
 
     } while(!WIFEXITED(status) && !WIFSIGNALED(status));
-    printf("Pty was closed");
+    printf("Pty was closed\n");
 
     // Close connection
     if (ws_close(connection_fd) == -1) {
         return -1;
     }
-    printf("Conn was closed");
+    printf("Conn was closed\n");
 
     return 0;
 }
@@ -172,9 +183,21 @@ pty_loop(PTY * pty, int connection_fd) {
     int len;
     int r;
     int done = 0;
+    time_t ping_pong_interval1;
+    time_t ping_pong_interval2;
+
+    if ((ping_pong_interval1 = time(0)) == -1) {
+        perror("Error while getting time");
+        return -1;
+    }
 
     do {
         r = poll(pty->ufds, 2, -1);
+
+        if ((ping_pong_inrerval2 = time(0)) == -1) {
+            perror("Error while getting time");
+            return -1;
+        }
 
         if ((r < 0) && (errno != EINTR)) {
             done = 1;
@@ -200,6 +223,11 @@ pty_loop(PTY * pty, int connection_fd) {
             continue;
         }
 
+        if (propagate_sigterm) {
+            pty_close(pty, connection_fd);
+            propagate_sigterm = 0;
+        }
+
         if (pty->ufds[1].revents & POLLIN) {
             len = read(pty->master, pty->buf, REQUESTSIZE);
 
@@ -221,7 +249,7 @@ pty_loop(PTY * pty, int connection_fd) {
                         write(pty->master, pty->buf, len);
                     // If was returned CLOSERET, close pty
                     } else if (len == CLOSERET) {
-                        printf("CLOSERET");
+                        printf("CLOSERET\n");
                         if (pty_close(pty, connection_fd) == -1) {
                             exit(-1);
                         }
@@ -235,6 +263,15 @@ pty_loop(PTY * pty, int connection_fd) {
             } else {
                  done = 1;
             }
+        }
+
+        // Every ten seconds send ping
+        if (ping_pong_interval2 - ping_pong_interval1 > 9) {
+            if ((ping_pong_interval1 = time(0)) == -1) {
+                perror("Error while getting time");
+                return -1;
+            }
+            ws_ping(connection_fd);
         }
     } while (!done);
 

@@ -133,8 +133,8 @@ ws_get_body(char * buf, uint len) {
     uchar opcode = buf[0] & 0x0F;
     
     //if FIN
-    if (fin){
-        switch(opcode){
+    if (fin) {
+        switch(opcode) {
             case 0x1:
                 //Text data
             case 0x2:
@@ -142,11 +142,12 @@ ws_get_body(char * buf, uint len) {
                 maskbit        = buf[1] & 0x80;
                 msg_len        = buf[1] & 0x7F;
 
-                if(msg_len < 126) {
+                if (msg_len < 126) {
                     msg_begin  = buf + (maskbit ? 6 : 2);
 
+                    // TODO: Don't copy if there is no mask
                     memcpy(mask, buf + 2, 4);
-                } else if(msg_len == 126) {
+                } else if (msg_len == 126) {
                     msg_len    = ((uint)buf[2] << 8) + buf[3];
                     msg_begin  = msg_begin + 2; 
 
@@ -154,15 +155,24 @@ ws_get_body(char * buf, uint len) {
                 }
 
                 for(uint i = 0; i < msg_len; ++ i) {
+                    // TODO: Don't xor if there is no mask
                     buf[i] = msg_begin[i] ^ mask[i & 3];
                 }
+
                 buf[msg_len] = 0;
+
+                // If command was exit, then our work is complete
+                /*if (strcmp(buf, "exit") == 0) {
+                    printf("Exit command\n");
+                    return CLOSERET;
+                }*/
+                // Will now work
 
                 return msg_len;
                 break;
             case 0x8:
                 //Close connection
-                printf("Closeret opcode");
+                printf("Close connection\n");
                 return CLOSERET;
                 break;
             case 0x9:
