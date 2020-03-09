@@ -62,7 +62,8 @@ ws.onmessage = function(data) {
 }
 
 function handleCGR(buf) {
-    for(let it of buf) {
+    for(let i = 0; i < buf.length; i ++) {
+        let it = buf[i];
         switch(it) {
             case 0:
                 acolor = dcolor;
@@ -85,6 +86,23 @@ function handleCGR(buf) {
                 else 
                     acolor =   colormap[it % 10];
                 break;
+
+            case 38: //256 colors
+                if(buf[i + 1] == 5){
+                    let col = buf[i + 2];
+                    if(col < 8)
+                        acolor =   colormap[col];
+                    else if(col < 16)
+                        acolor = brcolormap[col + 8];
+
+                    //TODO
+                    i += 2;
+                } else if(buf[i + 1] == 2){
+                    acolor = 'rgb(' + buf[i + 2].toString() + ',' + buf[i + 3].toString() + ',' + buf[i + 4].toString() + ')';
+                    i += 4;
+                }
+                break;
+
             case 40:
             case 41:
             case 42:
