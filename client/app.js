@@ -37,6 +37,15 @@ var brcolormap = {
     7: 'white'
 };
 
+var col8bitmap = {
+    0: '00',
+    1: '5F',
+    2: '87',
+    3: 'AF',
+    4: 'D7',
+    5: 'FF'
+};
+
 var curx;
 var cury;
 var terminal;
@@ -94,7 +103,20 @@ function handleCGR(buf) {
                         acolor =   colormap[col];
                     else if(col < 16)
                         acolor = brcolormap[col + 8];
+                    else if(col < 232){
+                        col -= 16;
+                        let redcolor = col8bitmap[parseInt(col/36)];
+                        let gcol = col % 36;
+                        let bluecolor = col8bitmap[gcol % 6];
+                        gcol = parseInt(gcol / 6);
+                        let greencolor = col8bitmap[gcol];
 
+                        acolor = '#' + redcolor + greencolor + bluecolor;
+                    } else {
+                        let t = 8;
+                        t += (col - 232) * 10;
+                        acolor = 'rgb(' + t.toString() + ',' + t.toString() + ',' + t.toString() + ')';
+                    }
                     //TODO
                     i += 2;
                 } else if(buf[i + 1] == 2){
