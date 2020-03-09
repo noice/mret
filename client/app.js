@@ -25,14 +25,11 @@ function handleEscape(message) {
         default:
             break;
     }*/
-    let result = message.match(/\x1B\[\??(([0-9]*)*(;([0-9]*)*))([ABCDEFGHJKSTfmnsulh])/);
+    let result = message.match(/\x1B\[\??(([0-9]*)(?:\;([0-9]*))*)([ABCDEFGHJKSTfmnsulh])/);
 
 
     if(!result)
         return 0;
-
-    console.log(result[0]);
-
 
     return result[0].length - 1;
 }
