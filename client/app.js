@@ -104,17 +104,7 @@ function handleCGR(buf) {
     }
 }
 
-function handleEscape(message) {
-    /*switch(message[f]){
-        case 'm':
-            if (f == i || (message[i] == '0' && i + 1 == f)){
-                acolor = dcolor;
-                abgcolor = dbgcolor;
-            }
-            break;
-        default:
-            break;
-    }*/
+function handleCSI(message) {
     let regex = /\x1B\[\??((?:\d*)(?:\;(?:\d*))*)([ABCDEFGHJKSTfmnsulh])/; 
     let result = regex.exec(message);
 
@@ -139,6 +129,25 @@ function handleEscape(message) {
         default:
             break;
     }
+
+    //console.log(result[0]);
+
+    return result[0].length - 1;
+}
+
+function handleOSC(message) {
+    console.log("Привет");
+    let regex = /\x1B\]0\;(.*)\x07/; 
+    let result = regex.exec(message);
+
+    if(!result)
+        return 0;
+
+    let title = result[1];
+
+    document.title = title;
+
+    //console.log(result[0]);
 
     return result[0].length - 1;
 }
@@ -178,11 +187,15 @@ function showMessage(message) {
         let charElem;
         switch(message[i]){
             case '\x1B':
-                if(message[i + 1] != '[')
-                    break;
-                
-                i += handleEscape(message.slice(i));
-
+                switch(message[i + 1]){
+                    case '[':
+                        i += handleCSI(message.slice(i));
+                        break;
+                    case ']':
+                        i += handleOSC(message.slice(i));
+                    default:
+                        break;
+                }
                 break;
 
             case '\n':
@@ -252,7 +265,7 @@ function handle(e) {
             }
         } else switch(e.key) {
             case "Enter":
-                ws.send('\n');
+                ws.send('\r');
                 break;
             case "Escape":
                 ws.send("\x1B");
@@ -265,6 +278,18 @@ function handle(e) {
                 break;
             case "Delete":
                 ws.send("\x7F");
+                break;
+            case "ArrowLeft":
+                ws.send("\x1B[D");
+                break;
+            case "ArrowUp":
+                ws.send("\x1B[A");
+                break;
+            case "ArrowRight":
+                ws.send("\x1B[C");
+                break;
+            case "ArrowDown":
+                ws.send("\x1B[B");
                 break;
             default:
                 break;
