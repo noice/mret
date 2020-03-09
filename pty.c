@@ -185,6 +185,7 @@ pty_loop(PTY * pty, int connection_fd) {
     int done = 0;
     time_t ping_pong_interval1;
     time_t ping_pong_interval2;
+    time_t timeout = 5;
 
     if ((ping_pong_interval1 = time(0)) == -1) {
         perror("Error while getting time");
@@ -194,7 +195,7 @@ pty_loop(PTY * pty, int connection_fd) {
     do {
         r = poll(pty->ufds, 2, -1);
 
-        if ((ping_pong_inrerval2 = time(0)) == -1) {
+        if ((ping_pong_interval2 = time(0)) == -1) {
             perror("Error while getting time");
             return -1;
         }
@@ -255,6 +256,9 @@ pty_loop(PTY * pty, int connection_fd) {
                         }
 
                         exit(0);
+                    } else if (len == PONGRET) {
+                        printf("PONG :)\n");
+                        ping_pong_interval1 = time(0);
                     }
                 } else {
                     //http request
@@ -266,12 +270,20 @@ pty_loop(PTY * pty, int connection_fd) {
         }
 
         // Every ten seconds send ping
-        if (ping_pong_interval2 - ping_pong_interval1 > 9) {
+        if (ping_pong_interval2 - ping_pong_interval1 >= 10) {
             if ((ping_pong_interval1 = time(0)) == -1) {
                 perror("Error while getting time");
                 return -1;
             }
-            ws_ping(connection_fd);
+
+            printf("PING :)\n");
+            if (ws_ping(connection_fd)) {
+                perror("Error while sending ping");
+                return -1;
+            }
+        } else if (ping_pong_interval2 - ping_pong_interval1 >= 15) {
+            printf("No PONG :( Kill client\n");
+            pty_close(pty, connection_fd);
         }
     } while (!done);
 
