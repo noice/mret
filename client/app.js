@@ -105,7 +105,7 @@ function handleCGR(buf) {
 }
 
 function handleCSI(message) {
-    let regex = /\x1B\[\??((?:\d*)(?:\;(?:\d*))*)([ABCDEFGHJKSTfmnsulh])/; 
+    let regex = /\x1B\[\??((?:\d*)(?:\;(?:\d*))*)([ABCDEFGHJKPSTfmnsulh])/; 
     let result = regex.exec(message);
 
     if(!result)
@@ -125,6 +125,25 @@ function handleCSI(message) {
     switch(code){
         case 'm':
             handleCGR(buf);
+            break;
+        case 'C':
+            //TODO: if curx + 1 span exist
+            changeCurPos(curx, cury, curx + 1, cury);
+            curx ++;
+            break;
+        case 'P':
+            let curdiv = terminal.childNodes[cury];
+            changeCurPos(curx, cury, curx + 1, cury);
+            curdiv.removeChild(curdiv.childNodes[curx]);
+            break;
+        case 'K':
+            if(buf[0] == 0){
+                let curdiv = terminal.childNodes[cury];
+                changeCurPos(curx, cury, curdiv.childNodes.length - 1, cury);
+                while(curdiv.childNodes[curx] != curdiv.lastElementChild){
+                    curdiv.removeChild(curdiv.childNodes[curx]);
+                }
+            }
             break;
         default:
             break;
@@ -185,6 +204,7 @@ function showMessage(message) {
     for(let i = 0; i < message.length; i ++){
         let curdiv;
         let charElem;
+        console.log(message[i] + ' - ' + message.charCodeAt(i).toString(16));
         switch(message[i]){
             case '\x1B':
                 switch(message[i + 1]){
@@ -219,16 +239,41 @@ function showMessage(message) {
                 cury += 1;
                 break;
 
+            case '\r': //CR
+                break;
+
+            case '\x07': //BELL
+                break;
+
+            case '\x08': //Backspace
+                if(curx > 0){
+                    changeCurPos(curx, cury, curx - 1, cury);
+                    curx --;
+                }
+                break;
+
             default:
                 curdiv = terminal.childNodes[cury];
+                if(curx < curdiv.childNodes.length){
+                    charElem = curdiv.childNodes[curx];
+                    charElem.innerText = message[i];
+                    curcolor = acolor;
+                    curbgcolor = abgcolor;
 
-                charElem = document.createElement('span');
-                charElem.appendChild(document.createTextNode(message[i]));
-                charElem.style.color = acolor;
-                charElem.style.backgroundColor = abgcolor;
-                curdiv.insertBefore(charElem, curdiv.childNodes[curx]);
-                
-                curx += 1;
+                    if(charElem == curdiv.lastElementChild){
+                        charElem = document.createElement('span');
+                        charElem.appendChild(document.createTextNode('\xA0'));
+                        charElem.style.color = dcolor;
+                        charElem.style.backgroundColor = dbgcolor;
+                        curdiv.append(charElem);
+                    }
+
+                    changeCurPos(curx, cury, curx + 1, cury);
+                    curx ++;
+                } else {
+                    //TODO
+                }
+
                 break;
         }
     }
