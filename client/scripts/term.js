@@ -1,5 +1,9 @@
 var curx;
 var cury;
+
+var saved_curx = 0;
+var saved_cury = 0;
+
 var terminal;
 init();
 
@@ -93,7 +97,7 @@ function handleCSI(message) {
             cury = buf[0];
             break; 
         case 'J': //Erase Data
-            if(buf[0] == 0){
+            if(buf[0] == 0 || buf[0] == 2){
                 let curdiv = terminal.childNodes[cury];
                 while(curdiv.childNodes[curx] != curdiv.lastElementChild){
                     curdiv.removeChild(curdiv.childNodes[curx]);
@@ -101,8 +105,9 @@ function handleCSI(message) {
                 while(curdiv != terminal.lastElementChild){
                     terminal.removeChild(terminal.lastElementChild);
                 }
+            } 
 
-            } else if(buf[0] == 1){
+            if(buf[0] == 1 || buf[0] == 2){
                 for (let inode = 0; inode < terminal.childNodes[cury].childNodes.length; inode++) {
                     terminal.childNodes[cury].childNodes[inode].innerText = '\xA0';
                 }
@@ -117,13 +122,21 @@ function handleCSI(message) {
                     terminal.childNodes[inode].append(charElem);
                     
                 }
-            } else if(buf[0] == 2) {
-                while (terminal.hasChildNodes()) {
-                    terminal.removeChild(terminal.firstChild);
+            }
+            break;
+        case 'K': //Erase in Line
+            if(buf[0] == 0 || buf[0] == 2){
+                let curdiv = terminal.childNodes[cury];
+                curdiv.childNodes[curx].innerText = '\xA0';
+                while(curdiv.childNodes[curx] != curdiv.lastElementChild){
+                    curdiv.removeChild(curdiv.lastElementChild);
                 }
-                changeCurPos(curx, cury, 0, 0);
-                curx = 0;
-                cury = 0;
+            }
+            if(buf[0] == 1 || buf[0] == 2){
+                let curdiv = terminal.childNodes[cury];
+                for(let inode = 0; inode <= curx && inode < curdiv.childNodes.length; inode ++){
+                    curdiv.childNodes[inode].innerText = '\xA0';
+                }
             }
             break;
         case 'P':
@@ -131,14 +144,43 @@ function handleCSI(message) {
             changeCurPos(curx, cury, curx + 1, cury);
             curdiv.removeChild(curdiv.childNodes[curx]);
             break;
-        case 'K':
-            if(buf[0] == 0){
-                let curdiv = terminal.childNodes[cury];
-                changeCurPos(curx, cury, curdiv.childNodes.length - 1, cury);
-                while(curdiv.childNodes[curx] != curdiv.lastElementChild){
-                    curdiv.removeChild(curdiv.childNodes[curx]);
-                }
+        case 'S': //Scroll Up
+            if(buf[0] == 0)
+                buf[0] = 1;
+            for(let i = 0; i < buf[0]; i ++){
+                changeCurPos(curx, cury, curx, cury + 1);
+                terminal.removeChild(terminal.firstElementChild);
             }
+            break;
+        case 'T': //Scroll Down
+            if(buf[0] == 0)
+                buf[0] = 1;
+            for(let i = 0; i < buf[0]; i ++){
+                terminal.insertBefore(document.createElement('div'), terminal.firstElementChild);
+             
+                let charElem = document.createElement('span');
+                charElem.appendChild(document.createTextNode('\xA0'));
+                charElem.style.color = dcolor;
+                charElem.style.backgroundColor = dbgcolor;
+                terminal.firstElementChild.append(charElem);
+             
+                changeCurPos(curx, cury + 1, curx, cury);
+            }
+            break;
+        case 'n': //Device Status Report
+            if(buf[0] == 6){
+                ws.send('\x1B[' + (cury + 1) + ';' + (curx + 1)  + 'R');
+                console.log('\x1B[' + (cury + 1) + ';' + (curx + 1)  + 'R');
+            }
+            break;
+        case 's': //Save Cursor Position
+            saved_curx = curx;
+            saved_cury = cury;
+            break;
+        case 'u': //Restore Cursor Position
+            changeCurPos(curx, cury, saved_curx, saved_cury);
+            curx = saved_curx;
+            cury = saved_cury;
             break;
         default:
             break;
