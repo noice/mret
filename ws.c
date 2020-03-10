@@ -162,13 +162,6 @@ ws_get_body(char * buf, uint len) {
 
                 buf[msg_len] = 0;
 
-                // If command was exit, then our work is complete
-                /*if (strcmp(buf, "exit") == 0) {
-                    printf("Exit command\n");
-                    return CLOSERET;
-                }*/
-                // Will now work
-
                 return msg_len;
                 break;
             case 0x8:

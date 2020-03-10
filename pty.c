@@ -89,6 +89,7 @@ new_pty(char * cmd, int connection_fd) {
 
     init_pty(pty, connection_fd);
     pty_loop(pty, connection_fd);
+    return 0; // Will not execute
 }
 
 int 
@@ -183,7 +184,7 @@ pty_loop(PTY * pty, int connection_fd) {
 
     if ((ping_pong_interval1 = time(0)) == -1) {
         perror("Error while getting time");
-        return -1;
+        pty_close(pty, connection_fd);
     }
 
     do {
@@ -191,7 +192,7 @@ pty_loop(PTY * pty, int connection_fd) {
 
         if ((ping_pong_interval2 = time(0)) == -1) {
             perror("Error while getting time");
-            return -1;
+            pty_close(pty, connection_fd);
         }
 
         if ((r < 0) && (errno != EINTR)) {
@@ -244,11 +245,7 @@ pty_loop(PTY * pty, int connection_fd) {
                         write(pty->master, pty->buf, len);
                     // If was returned CLOSERET, close pty
                     } else if (len == CLOSERET) {
-                        if (pty_close(pty, connection_fd) == -1) {
-                            exit(-1);
-                        }
-
-                        exit(0);
+                        pty_close(pty, connection_fd);
                     } else if (len == PONGRET) {
                         printf("PONG :)\n");
                         ping_pong_interval1 = time(0);
@@ -269,13 +266,13 @@ pty_loop(PTY * pty, int connection_fd) {
         if (ping_pong_interval2 - ping_pong_interval1 >= 10) {
             if ((ping_pong_interval1 = time(0)) == -1) {
                 perror("Error while getting time");
-                return -1;
+                pty_close(pty, connection_fd);
             }
 
             printf("PING :)\n");
             if (ws_ping(connection_fd)) {
                 perror("Error while sending ping");
-                return -1;
+                pty_close(pty, connection_fd);
             }
         } else if (ping_pong_interval2 - ping_pong_interval1 >= 15) {
             printf("No PONG :( Kill client\n");
@@ -284,5 +281,5 @@ pty_loop(PTY * pty, int connection_fd) {
     } while (!done);
 
     tcsetattr(connection_fd, TCSANOW, &pty->ot);
-    return 0;
+    pty_close(pty, connection_fd);
 }
