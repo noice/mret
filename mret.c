@@ -28,7 +28,7 @@ main(int argc, char *argv[]) {
         if(connection_fd > 0) {
             new_pty("/bin/bash", connection_fd);
         } else {
-            error("Error in accepting connection");
+            perror("Error in accepting connection");
             printf("Retrying...\n");
         }
     }
