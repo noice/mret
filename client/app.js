@@ -70,6 +70,34 @@ ws.onmessage = function(data) {
     showMessage(incomingMessage);
 }
 
+function getColor(buf, i){
+    if(buf[i + 1] == 5){
+        let col = buf[i + 2];
+        if(col < 8)
+            return colormap[col];
+        else if(col < 16)
+            return brcolormap[col + 8];
+        else if(col < 232){
+            col -= 16;
+            let redcolor = col8bitmap[parseInt(col/36)];
+            let gcol = col % 36;
+            let bluecolor = col8bitmap[gcol % 6];
+            gcol = parseInt(gcol / 6);
+            let greencolor = col8bitmap[gcol];
+
+            return '#' + redcolor + greencolor + bluecolor;
+        } else {
+            let t = 8;
+            t += (col - 232) * 10;
+            return 'rgb(' + t.toString() + ',' + t.toString() + ',' + t.toString() + ')';
+        }
+
+    } else if(buf[i + 1] == 2){
+        return 'rgb(' + buf[i + 2].toString() + ',' + buf[i + 3].toString() + ',' + buf[i + 4].toString() + ')';
+    }
+
+}
+
 function handleCGR(buf) {
     for(let i = 0; i < buf.length; i ++) {
         let it = buf[i];
@@ -96,33 +124,12 @@ function handleCGR(buf) {
                     acolor =   colormap[it % 10];
                 break;
 
-            case 38: //256 colors
-                if(buf[i + 1] == 5){
-                    let col = buf[i + 2];
-                    if(col < 8)
-                        acolor =   colormap[col];
-                    else if(col < 16)
-                        acolor = brcolormap[col + 8];
-                    else if(col < 232){
-                        col -= 16;
-                        let redcolor = col8bitmap[parseInt(col/36)];
-                        let gcol = col % 36;
-                        let bluecolor = col8bitmap[gcol % 6];
-                        gcol = parseInt(gcol / 6);
-                        let greencolor = col8bitmap[gcol];
-
-                        acolor = '#' + redcolor + greencolor + bluecolor;
-                    } else {
-                        let t = 8;
-                        t += (col - 232) * 10;
-                        acolor = 'rgb(' + t.toString() + ',' + t.toString() + ',' + t.toString() + ')';
-                    }
-                    //TODO
+            case 38: // 8-bit and 24-bit colors
+                acolor = getColor(buf, i);
+                if(buf[i + 1] == 5)
                     i += 2;
-                } else if(buf[i + 1] == 2){
-                    acolor = 'rgb(' + buf[i + 2].toString() + ',' + buf[i + 3].toString() + ',' + buf[i + 4].toString() + ')';
+                else if(buf[i + 1] == 2)
                     i += 4;
-                }
                 break;
 
             case 40:
@@ -138,6 +145,15 @@ function handleCGR(buf) {
                 else 
                     abgcolor =   colormap[it % 10];
                 break;
+
+            case 48: // 8-bit and 24-bit background colors
+                abgcolor = getColor(buf, i);
+                if(buf[i + 1] == 5)
+                    i += 2;
+                else if(buf[i + 1] == 2)
+                    i += 4;
+                break;
+
             default:
                 break;
         }
