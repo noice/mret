@@ -161,14 +161,13 @@ request_response(int connection_fd, char * buffer, uint len) {
 }
 
 int
-init_listener(char * ip_addr, char * port)
-{
+init_listener(char * ip_addr, char * port) {
     int listener_fd;
     struct sockaddr_in address;
     // Get socket listener and check for error
     if ((listener_fd  = socket(DOMAIN, SOCK_STREAM, 0)) < 0)
     {
-        perror("In socket");
+        perror("Error while creating socket for listener");
         return -1;
     }
 
@@ -213,21 +212,21 @@ get_connection(int listener_fd) {
 
     //Connecting
     if ((connection_fd = accept(listener_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
-        perror("In accept");
+        perror("Error in accepting connection");
         return -1;
     }
 
     // Reuse address without waiting and check for error
-    if (setsockopt(connection_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
+    if (setsockopt(connection_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
         perror("setsockopt(SO_REUSEADDR) failed");
+    }
 
     //Get request content
     if ((len = read(connection_fd, buffer, REQUESTSIZE)) < 0) {
-        printf("No bytes are there to read\n\n");
+        perror("No bytes are there to read\n\n");
         close(connection_fd);
         return -1;
     }
-    //printf("%s", buffer);
 
     return request_response(connection_fd, buffer, len);
 }

@@ -16,13 +16,16 @@
 #define REQUESTSIZE    8192
 #define MSGSIZE        65536
 
+// Frame's defines
 #define CLOSERET       -11
 #define PONGRET        -10
 #define PINGRET        -12
+#define GUID           "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
+// Dir for client side files
 #define CLIENTDIR      "client"
 
-#define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-
+// Custom types
 typedef unsigned char      uchar;
 typedef unsigned short     ushort;
 typedef unsigned int       uint;
