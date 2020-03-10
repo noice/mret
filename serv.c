@@ -29,14 +29,16 @@ readfile(char * buf, char * path, uint bufsize) {
     char * _buf = buf;
     FILE * fp = fopen(path, "r");
     
-    if (!fp){
+    if (!fp) {
+        perror("Error in opening file");
         return -1;
     }
 
     while ((c = fgetc(fp)) != EOF) {
-        if ((i ++) >= bufsize){
+        if ((i ++) >= bufsize) {
             return -2;
         }
+
         *(_buf ++) = c;
     }
 
@@ -54,7 +56,7 @@ get_msg_body(char * buf, uint len, char * path, char * type, char * status) {
     char header[HEADERSIZE];
     int read_ret = readfile(buf, path, len - HEADERSIZE);
 
-    if(read_ret < 0)
+    if (read_ret < 0)
         return read_ret;
 
     sprintf(header, "%s%s\r\n", http_header, status);
@@ -71,7 +73,6 @@ get_msg_body(char * buf, uint len, char * path, char * type, char * status) {
     memcpy(buf, header, strlen(header));
     return 0;
 }
-
 
 int is_http_request(char * buf, uint len) {
     char * r;
@@ -132,11 +133,11 @@ int http_response(int connection_fd, char * buffer, uint len) {
     if(res == 0){
         write(connection_fd, buf, strlen(buf));
     } else if (res == -1){
-        printf("404 - %s\n", path);
+        //printf("404 - %s\n", path);
         res = get_msg_body(buf, MSGSIZE, "client/404.html", "text/html", "404 Not Found");
         write(connection_fd, buf, strlen(buf));
     } else if (res == -2) {
-        printf("File too big - %s\n\n", path);
+        //printf("File too big - %s\n\n", path);
     }
     return 0;
 }
@@ -161,19 +162,18 @@ request_response(int connection_fd, char * buffer, uint len) {
 }
 
 int
-init_listener(char * ip_addr, char * port)
-{
+init_listener(char * ip_addr, char * port) {
     int listener_fd;
     struct sockaddr_in address;
     // Get socket listener and check for error
-    if ((listener_fd  = socket(DOMAIN, SOCK_STREAM, 0)) < 0)
-    {
-        perror("In socket");
+    if ((listener_fd  = socket(DOMAIN, SOCK_STREAM, 0)) < 0) {
+        perror("Error while creating socket for listener");
         return -1;
     }
 
-    if (setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
+    if (setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
         perror("setsockopt(SO_REUSEADDR) failed");
+    }
 
     // Filling sockaddr_in struct
     address.sin_family = DOMAIN;
@@ -181,21 +181,19 @@ init_listener(char * ip_addr, char * port)
     inet_pton(DOMAIN, ip_addr, &(address.sin_addr));
 
     // Reuse address without waiting and check for error
-   /* if (setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, NULL, 0) < 0) {
+    if (setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
         perror("Error setting SO_REUSEADDR option for listen_fd");
     }
-    */
+    
     // Binding socket and check for error
-    if (bind(listener_fd, (struct sockaddr *) &address, sizeof(address)) < 0)
-    {
-        perror("In bind");
+    if (bind(listener_fd, (struct sockaddr *) &address, sizeof(address)) < 0) {
+        perror("Error in binding listener socket");
         return -1;
     }
 
     // Set socket to listen and check for error
-    if (listen(listener_fd, 10) < 0)
-    {
-        perror("In listen");
+    if (listen(listener_fd, 10) < 0) {
+        perror("Error in setting listener socket in listen state");
         return -1;
     }
     
@@ -213,21 +211,16 @@ get_connection(int listener_fd) {
 
     //Connecting
     if ((connection_fd = accept(listener_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
-        perror("In accept");
+        perror("Error in accepting connection");
         return -1;
     }
-
-    // Reuse address without waiting and check for error
-    if (setsockopt(connection_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
-        perror("setsockopt(SO_REUSEADDR) failed");
 
     //Get request content
     if ((len = read(connection_fd, buffer, REQUESTSIZE)) < 0) {
-        printf("No bytes are there to read\n\n");
+        perror("No bytes are there to read\n\n");
         close(connection_fd);
         return -1;
     }
-    //printf("%s", buffer);
 
     return request_response(connection_fd, buffer, len);
 }

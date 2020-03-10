@@ -139,6 +139,7 @@ pty_close(PTY * pty, int connection_fd) {
     time_t t1, t2;
     
     kill(pty->pid, SIGTERM);
+    printf("Terminating pty...\n");
     if ((t1 = time(0)) == -1) {
         perror("Error while getting time");
     }
@@ -155,6 +156,7 @@ pty_close(PTY * pty, int connection_fd) {
         // If waiting is longer than 10 seconds, then send SIGKILL
         if ((t2 - t1) > 10) {
             kill(pty->pid, SIGKILL);
+            printf("Timeout. Kill signal for pty\n");
             break;
         }
 
@@ -164,7 +166,6 @@ pty_close(PTY * pty, int connection_fd) {
 
     // Close connection
     ws_close(connection_fd);
-    printf("Conn was closed\n");
 
     free(pty);
     exit(0);
@@ -243,7 +244,6 @@ pty_loop(PTY * pty, int connection_fd) {
                         write(pty->master, pty->buf, len);
                     // If was returned CLOSERET, close pty
                     } else if (len == CLOSERET) {
-                        printf("CLOSERET\n");
                         if (pty_close(pty, connection_fd) == -1) {
                             exit(-1);
                         }

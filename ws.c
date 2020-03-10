@@ -173,7 +173,6 @@ ws_get_body(char * buf, uint len) {
                 break;
             case 0x8:
                 //Close connection
-                printf("Close connection\n");
                 return CLOSERET;
                 break;
             case 0x9:
@@ -183,7 +182,6 @@ ws_get_body(char * buf, uint len) {
                 break;
             case 0xA:
                 //PONG opcode
-                printf("We get pong opcode.\n\n");
                 return PONGRET;
                 break;
             default:
@@ -250,11 +248,11 @@ is_ws_request(char * buf, uint len) {
 
 int
 ws_close(int connection_fd) {
-    printf("Closing socket...\n");
     if (close(connection_fd) == - 1) {
         perror("Error while closing WebSocket");
         return -1;
     }
+    printf("Connection socket is closed\n");
 
     return 0;
 }
