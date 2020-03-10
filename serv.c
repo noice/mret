@@ -29,14 +29,16 @@ readfile(char * buf, char * path, uint bufsize) {
     char * _buf = buf;
     FILE * fp = fopen(path, "r");
     
-    if (!fp){
+    if (!fp) {
+        perror("Error in opening file");
         return -1;
     }
 
     while ((c = fgetc(fp)) != EOF) {
-        if ((i ++) >= bufsize){
-            return -2;
+        if ((i ++) >= bufsize) {
+            return -1;
         }
+
         *(_buf ++) = c;
     }
 
@@ -71,7 +73,6 @@ get_msg_body(char * buf, uint len, char * path, char * type, char * status) {
     memcpy(buf, header, strlen(header));
     return 0;
 }
-
 
 int is_http_request(char * buf, uint len) {
     char * r;
