@@ -38,11 +38,59 @@ function handleCSI(message) {
         case 'm':
             handleCGR(buf);
             break;
-        case 'C':
-            //TODO: if curx + 1 span exist
-            changeCurPos(curx, cury, curx + 1, cury);
-            curx ++;
+        case 'A': //Cursor Up
+            if(buf[0] == 0)
+                buf[0] = 1;
+            changeCurPos(curx, cury, curx, cury - buf[0]);
+            cury -= buf[0];
             break;
+        case 'B': //Cursor Down
+            if(buf[0] == 0)
+                buf[0] = 1;
+            changeCurPos(curx, cury, curx, cury + buf[0]);
+            cury += buf[0];
+            break;
+        case 'C': //Cursor Right
+            if(buf[0] == 0)
+                buf[0] = 1;
+            changeCurPos(curx, cury, curx + buf[0], cury);
+            curx += buf[0];
+            break;
+        case 'D': //Cursor Left
+            if(buf[0] == 0)
+                buf[0] = 1;
+            changeCurPos(curx, cury, curx - buf[0], cury);
+            curx -= buf[0];
+            break;
+        case 'E': //Cursor Next Line
+            if(buf[0] == 0)
+                buf[0] = 1;
+            changeCurPos(curx, cury, 0, cury + buf[0]);
+            curx = 0;
+            cury += buf[0];
+            break;
+        case 'F': //Cursor Previous Line
+            if(buf[0] == 0)
+                buf[0] = 1;
+            changeCurPos(curx, cury, 0, cury - buf[0]);
+            curx = 0;
+            cury -= buf[0];
+            break; 
+        case 'G': //Cursor Horizontal Absolute
+            buf[0] -= 1;
+            changeCurPos(curx, cury, buf[0], cury);
+            curx = buf[0];
+            break; 
+        case 'H': //Cursor Position
+            if(buf[0] > 0)
+                buf[0] -= 1;
+            if(buf.length == 1)
+                buf.push(1);
+            buf[1] -= 1;
+            changeCurPos(curx, cury, buf[1], buf[0]);
+            curx = buf[1];
+            cury = buf[0];
+            break; 
         case 'P':
             let curdiv = terminal.childNodes[cury];
             changeCurPos(curx, cury, curx + 1, cury);
