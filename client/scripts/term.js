@@ -1,8 +1,14 @@
 var curx;
 var cury;
 
+var alternate_screen = [];
+var alternate_curx=0;
+var alternate_cury=0;
+
 var saved_curx = 0;
 var saved_cury = 0;
+
+var cur_visible = 0;
 
 var terminal;
 init();
@@ -181,6 +187,32 @@ function handleCSI(message) {
             changeCurPos(curx, cury, saved_curx, saved_cury);
             curx = saved_curx;
             cury = saved_cury;
+            break;
+        case 'h':
+            if(buf[0] == 1049){
+                alternate_curx = curx;
+                alternate_cury = cury;
+
+                while(terminal.firstElementNode){
+                    alternate_screen.push(terminal.firstElementNode);
+                    terminal.removeChild(terminal.firstElementNode);
+                }
+                changeCurPos(curx, cury, 0, 0);
+                curx = 0;
+                cury = 0;
+            }
+            break;
+        case 'l':
+            if(buf[0] == 1049){
+                curx = alternate_curx;
+                cury = alternate_cury;
+
+                for(let i = 0; i < alternate_screen.length; i ++){
+                    terminal.appendChild(alternate_screen[i]);
+                }
+
+                alternate_screen = [];
+            }
             break;
         default:
             break;
