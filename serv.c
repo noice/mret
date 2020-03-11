@@ -170,7 +170,8 @@ init_listener(char * ip_addr, char * port) {
         perror("Error while creating socket for listener");
         return -1;
     }
-
+    
+    // Reuse address without waiting and check for error
     if (setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
         perror("setsockopt(SO_REUSEADDR) failed");
     }
@@ -179,11 +180,6 @@ init_listener(char * ip_addr, char * port) {
     address.sin_family = DOMAIN;
     address.sin_port = htons( atoi(port) );
     inet_pton(DOMAIN, ip_addr, &(address.sin_addr));
-
-    // Reuse address without waiting and check for error
-    if (setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
-        perror("Error setting SO_REUSEADDR option for listen_fd");
-    }
     
     // Binding socket and check for error
     if (bind(listener_fd, (struct sockaddr *) &address, sizeof(address)) < 0) {
