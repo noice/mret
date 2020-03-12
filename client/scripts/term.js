@@ -1,9 +1,9 @@
 var curx;
 var cury;
 
-var alternate_screen = [];
-var alternate_curx=0;
-var alternate_cury=0;
+var alternate_screen = '';
+var alternate_curx = -1;
+var alternate_cury = -1;
 
 var saved_curx = 0;
 var saved_cury = 0;
@@ -190,28 +190,23 @@ function handleCSI(message) {
             break;
         case 'h':
             if(buf[0] == 1049){
-                alternate_curx = curx;
-                alternate_cury = cury;
+                [curx, alternate_curx] = [alternate_curx, curx];
+                [cury, alternate_cury] = [alternate_cury, cury];
 
-                while(terminal.firstElementNode){
-                    alternate_screen.push(terminal.firstElementNode);
-                    terminal.removeChild(terminal.firstElementNode);
+                [terminal.innerHTML, alternate_screen] = [alternate_screen, terminal.innerHTML];
+                if(curx == -1 || cury == -1){
+                    changeCurPos(curx, cury, 0, 0);
+                    curx = 0;
+                    cury = 0;
                 }
-                changeCurPos(curx, cury, 0, 0);
-                curx = 0;
-                cury = 0;
             }
             break;
         case 'l':
-            if(buf[0] == 1049){
-                curx = alternate_curx;
-                cury = alternate_cury;
+            if(buf[0] == 1049 && curx != -1){
+                [curx, alternate_curx] = [alternate_curx, curx];
+                [cury, alternate_cury] = [alternate_cury, cury];
 
-                for(let i = 0; i < alternate_screen.length; i ++){
-                    terminal.appendChild(alternate_screen[i]);
-                }
-
-                alternate_screen = [];
+                [terminal.innerHTML, alternate_screen] = [alternate_screen, terminal.innerHTML];
             }
             break;
         default:
@@ -225,11 +220,14 @@ function handleCSI(message) {
 
 function handleOSC(message) {
     console.log("Привет");
-    let regex = /\x1B\]0\;(^\x07*)\x07/; 
+    let regex = /\x1B\]0\;(.+)\07/; 
+    regex.lastIndex = 0;
     let result = regex.exec(message);
 
     if(!result)
         return 0;
+
+    console.log("Пока");
 
     let title = result[1];
 
@@ -312,8 +310,6 @@ function showMessage(message) {
                 }
                 break;
 
-            case '\x20': //Space
-                message[i] = '\xA0';
             default:
                 curdiv = terminal.childNodes[cury];
                 if(curx < curdiv.childNodes.length){
