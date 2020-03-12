@@ -1,6 +1,11 @@
 var curx;
 var cury;
 
+var escape_state = 0;
+var escape_sequence = '';
+var CSI_priv = '';
+var OSC_msg = '';
+
 var alternate_screen = '';
 var alternate_curx = -1;
 var alternate_cury = -1;
@@ -26,15 +31,40 @@ function init() {
     terminal.lastElementChild.appendChild(charElem);
 }
 
-function handleCSI(message) {
-    let regex = /\x1B\[\??((?:\d*)(?:\;(?:\d*))*)([ABCDEFGHJKPSTfmnsulh])/; 
-    let result = regex.exec(message);
+function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
+    if (terminal.childNodes.length > prevcury && 
+        terminal.childNodes[prevcury]         &&
+        terminal.childNodes[prevcury].childNodes.length > prevcurx) {
+        
+        prevcur = terminal.childNodes[prevcury].childNodes[prevcurx];
+        prevcur.style.color = curcolor;
+        prevcur.style.backgroundColor = curbgcolor;
+    }
 
-    if(!result)
-        return 0;
+    while (terminal.childNodes.length <= newcury){
+        terminal.appendChild(document.createElement('div'));
+    }
 
-    let buf = result[1].split(';');
-    let code = result[2];
+    while (terminal.childNodes[newcury].childNodes.length <= newcurx){
+        let charElem = document.createElement('span');
+        charElem.appendChild(document.createTextNode('\xA0'));
+        charElem.style.color = dcolor;
+        charElem.style.backgroundColor = dbgcolor;
+        
+        terminal.childNodes[newcury].appendChild(charElem);
+    }
+
+    newcur = terminal.childNodes[newcury].childNodes[newcurx];
+    curcolor = newcur.style.color;
+    curbgcolor = newcur.style.backgroundColor;
+
+    newcur.style.color = dcurcolor;
+    newcur.style.backgroundColor = dcurbgcolor;
+}
+
+function handleCSI() {
+    let buf = escape_sequence.split(';');
+    let code = CSI_priv;
 
     for(let i = 0; i < buf.length; i ++) {
         if(buf[i]){
@@ -188,7 +218,7 @@ function handleCSI(message) {
             curx = saved_curx;
             cury = saved_cury;
             break;
-        case 'h':
+        case '?h':
             if(buf[0] == 1049){
                 [curx, alternate_curx] = [alternate_curx, curx];
                 [cury, alternate_cury] = [alternate_cury, cury];
@@ -201,7 +231,7 @@ function handleCSI(message) {
                 }
             }
             break;
-        case 'l':
+        case '?l':
             if(buf[0] == 1049 && curx != -1){
                 [curx, alternate_curx] = [alternate_curx, curx];
                 [cury, alternate_cury] = [alternate_cury, cury];
@@ -212,131 +242,163 @@ function handleCSI(message) {
         default:
             break;
     }
-
-    console.log(result[0]);
-
-    return result[0].length - 1;
 }
 
-function handleOSC(message) {
-    console.log("Привет");
-    let regex = /\x1B\]0\;(.+)\07/; 
-    regex.lastIndex = 0;
-    let result = regex.exec(message);
-
-    if(!result)
-        return 0;
-
-    console.log("Пока");
-
-    let title = result[1];
-
-    document.title = title;
-
-    //console.log(result[0]);
-
-    return result[0].length - 1;
-}
-
-function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
-    if (terminal.childNodes.length > prevcury && 
-        terminal.childNodes[prevcury].childNodes.length > prevcurx) {
-        
-        prevcur = terminal.childNodes[prevcury].childNodes[prevcurx];
-        prevcur.style.color = curcolor;
-        prevcur.style.backgroundColor = curbgcolor;
+function handleOSC(next_char) {
+    if(escape_sequence.length > 2 && escape_sequence.slice(-1) == '\x07'){
+        escape_state = 0;
+    } else if(escape_sequence.length > 2 && escape_sequence.slice(-2) == '\x1b\\'){
+        escape_state = 0;
     }
 
-    while (terminal.childNodes.length <= newcury){
+    if(escape_sequence.length == 3 && escape_sequence != ']0;'){
+        escape_state = 0;
+    }
+
+    escape_sequence += next_char;
+    //console.log(escape_sequence);
+
+    if(escape_sequence.length > 2 && escape_sequence.slice(-1) == '\x07'){
+        let title = escape_sequence.slice(3, -1);
+        document.title = title;
+    } else if(escape_sequence.length > 2 && escape_sequence.slice(-2) == '\x1b\\'){
+        let title = escape_sequence.slice(3, -2);
+        document.title = title;
+    }
+}
+
+function parseCSI(next_char) {
+    //TODO
+    if(CSI_priv.length && CSI_priv.slice(-1) != '?'){
+        console.log(CSI_priv + ' - ' + escape_sequence);
+        escape_state = 0;
+        return;
+    }
+
+    if(next_char == '?') {
+        if (CSI_priv || escape_sequence.length)
+            escape_state = 0;
+        CSI_priv = '?';
+    } else if('@ABCDEFGHIJKLMPSTXZ^`abcdefghilmnpqrstuvwxyz{|}~'.indexOf(next_char) != -1) {
+        CSI_priv += next_char;
+        handleCSI();
+    } else if(escape_sequence.length == 0 && next_char != '[') {
+        if (';0123456789'.indexOf(next_char) == -1){
+            escape_state = 0;
+        }
+        escape_sequence += next_char;
+    } else if(escape_sequence.length){
+        if (';0123456789'.indexOf(next_char) == -1){
+            escape_state = 0;
+        }
+        escape_sequence += next_char;
+    }
+}
+
+
+function handleEscape(next_char){
+    if(escape_state == 1){
+        if('DEHMNOPVWXZ[]^_ #%()*+-./6789=>Fclmno|}~'.indexOf(next_char) == -1)
+            escape_state = 0;
+        else {
+            escape_state = next_char;
+            escape_sequence = '';
+            CSI_priv = '';
+        }
+    }
+
+    switch(escape_state){
+        case '[':
+            parseCSI(next_char);
+            break;
+
+        case ']':
+            handleOSC(next_char);
+            break;
+
+        case ' ':
+        case '#':
+        case '%':
+        case '(':
+        case ')':
+        case '*':
+        case '+':
+        case '-':
+        case '.':
+        case '/':
+            // Skip symbol after sequence
+            if(escape_sequence.length == 2){
+                escape_state = 0;
+            } else {
+                escape_sequence += next_char;
+            }
+            break;
+
+        default:
+            escape_state = 0;
+            break;
+    }
+}
+
+function nextChar(next_char) {
+    if(escape_state) {
+        handleEscape(next_char);
+        if(escape_state)
+            return;
+    }
+
+    switch(next_char) {
+        case '\x1b':
+            escape_state = 1;
+            break;
+
+        case '\n':
+            changeCurPos(curx, cury, curx, cury + 1);
+            cury += 1;
+            break;
+
+        case '\r': //CR
+            changeCurPos(curx, cury, 0, cury);
+            curx = 0;
+            break;
+
+        case '\x07': //BELL
+            break;
+
+        case '\x08': //Backspace
+            if(curx > 0){
+                changeCurPos(curx, cury, curx - 1, cury);
+                curx --;
+            }
+            break;
+
+        default:
+            printChar(next_char);
+            break;
+    }
+
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
+
+function printChar(next_char){
+    while (terminal.childNodes.length <= cury){
         terminal.appendChild(document.createElement('div'));
     }
-
-    while (terminal.childNodes[newcury].childNodes.length <= newcurx){
+  
+    while (terminal.childNodes[cury].childNodes.length <= curx){
         let charElem = document.createElement('span');
         charElem.appendChild(document.createTextNode('\xA0'));
         charElem.style.color = dcolor;
         charElem.style.backgroundColor = dbgcolor;
         
-        terminal.childNodes[newcury].appendChild(charElem);
+        terminal.childNodes[cury].appendChild(charElem);
     }
 
-    newcur = terminal.childNodes[newcury].childNodes[newcurx];
-    curcolor = newcur.style.color;
-    curbgcolor = newcur.style.backgroundColor;
+    terminal.childNodes[cury].childNodes[curx].innerText = next_char;
+    curcolor = acolor;
+    curbgcolor = abgcolor;
 
-    newcur.style.color = dcurcolor;
-    newcur.style.backgroundColor = dcurbgcolor;
+    changeCurPos(curx, cury, curx + 1, cury);
+    curx ++;
 }
-
-function showMessage(message) {
-    if(!terminal.lastElementChild){
-        init();
-    }
-
-    for(let i = 0; i < message.length; i ++){
-        let curdiv;
-        let charElem;
-        console.log(message[i] + ' - ' + message.charCodeAt(i).toString(16));
-        switch(message[i]){
-            case '\x1B':
-                switch(message[i + 1]){
-                    case '[':
-                        i += handleCSI(message.slice(i));
-                        break;
-                    case ']':
-                        i += handleOSC(message.slice(i));
-                    default:
-                        break;
-                }
-                break;
-
-            case '\n':
-                changeCurPos(curx, cury, curx, cury + 1);
-                cury += 1;
-                break;
-
-            case '\r': //CR
-                changeCurPos(curx, cury, 0, cury);
-                curx = 0;
-                break;
-
-            case '\x07': //BELL
-                break;
-
-            case '\x08': //Backspace
-                if(curx > 0){
-                    changeCurPos(curx, cury, curx - 1, cury);
-                    curx --;
-                }
-                break;
-
-            default:
-                curdiv = terminal.childNodes[cury];
-                if(curx < curdiv.childNodes.length){
-                    charElem = curdiv.childNodes[curx];
-                    charElem.innerText = message[i];
-                    curcolor = acolor;
-                    curbgcolor = abgcolor;
-
-                    if(charElem == curdiv.lastElementChild){
-                        charElem = document.createElement('span');
-                        charElem.appendChild(document.createTextNode('\xA0'));
-                        charElem.style.color = dcolor;
-                        charElem.style.backgroundColor = dbgcolor;
-                        curdiv.append(charElem);
-                    }
-
-                    changeCurPos(curx, cury, curx + 1, cury);
-                    curx ++;
-                } else {
-                    //TODO
-                }
-
-                break;
-        }
-    }
-
-
-    window.scrollTo(0,document.body.scrollHeight);
-}
-
