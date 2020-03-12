@@ -6,6 +6,7 @@
 
 #include "include.h" // All necessary header files and definitions
 
+int read_new_host(int , char **, char *, char *);
 int new_pty(char *, int); 
 int init_listener(char *, char *); 
 int get_connection(int);
@@ -15,9 +16,10 @@ int
 main(int argc, char *argv[]) {
     int listener_fd;
     int connection_fd;
-    // TODO: User can change default addres and port
-    char addr[16] = "127.0.0.1"; // Max addr length "255.255.255.255" + '\0' = 15
+
+    char addr[16] = "127.0.0.1"; // Max addr length "255.255.255.255" + '\0' = 16
     char port[6] = "8080";       // Max port length "65535" + '\0' = 6
+    read_new_host(argc, argv, addr, port); 
 
     if ((listener_fd = init_listener(addr, port)) < 0) {
         exit(EXIT_FAILURE);
