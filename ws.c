@@ -111,7 +111,7 @@ ws_send(int connection_fd, char * buf, uint len) {
     } else if (len >= 126 && len <= 65535) {
         frame[1] = 126;
         frame[2] = (len >> 8);
-        frame[3] = (unsigned char) (~0) & len;
+        frame[3] = (uchar) (~0) & len;
         memcpy(&frame[4], buf, len);
         framesize = len + 4;
     } else {
@@ -178,7 +178,7 @@ ws_get_body(char * buf, uint len) {
                 return PONGRET;
                 break;
             default:
-                printf("Uncorrect opcode - %X\n\n");
+                printf("Uncorrect opcode - %X\n\n", opcode);
                 break;
         }
     } else {

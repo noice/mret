@@ -10,6 +10,9 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 
+// Sizes
+#define PORTLEN        6
+#define ADDRLEN        16
 #define TYPESIZE       32
 #define PATHSIZE       256
 #define HEADERSIZE     2048
