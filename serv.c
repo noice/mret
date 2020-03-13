@@ -109,7 +109,7 @@ int http_response(int connection_fd, char * buffer, uint len) {
     path[dirlen + pathlen] = 0;
     printf("%s\n", path);
 
-    if(path[strlen(path) - 1] == '/'){
+    if (path[strlen(path) - 1] == '/') {
         strcpy(&path[strlen(path)], "index.html");
     }
 
@@ -130,7 +130,7 @@ int http_response(int connection_fd, char * buffer, uint len) {
     printf("type - %s\n\n", type);
 
     res = get_msg_body(buf, MSGSIZE, path, type, "200 OK");
-    if(res == 0){
+    if (res == 0) {
         write(connection_fd, buf, strlen(buf));
     } else if (res == -1){
         //printf("404 - %s\n", path);
@@ -170,7 +170,8 @@ init_listener(char * ip_addr, char * port) {
         perror("Error while creating socket for listener");
         return -1;
     }
-
+    
+    // Reuse address without waiting and check for error
     if (setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
         perror("setsockopt(SO_REUSEADDR) failed");
     }
@@ -179,11 +180,6 @@ init_listener(char * ip_addr, char * port) {
     address.sin_family = DOMAIN;
     address.sin_port = htons( atoi(port) );
     inet_pton(DOMAIN, ip_addr, &(address.sin_addr));
-
-    // Reuse address without waiting and check for error
-    if (setsockopt(listener_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0) {
-        perror("Error setting SO_REUSEADDR option for listen_fd");
-    }
     
     // Binding socket and check for error
     if (bind(listener_fd, (struct sockaddr *) &address, sizeof(address)) < 0) {
@@ -223,4 +219,78 @@ get_connection(int listener_fd) {
     }
 
     return request_response(connection_fd, buffer, len);
+}
+
+int
+read_new_host(int argc, char *argv[], char *addr, char *port) {
+    char *new_addr = NULL;
+    char *new_port = NULL;
+    char addr_flag = 0; // "-i" option was met
+    char port_flag = 0; // "-p" option was met
+    int new_addr_len = 0;
+    int new_port_len = 0;
+
+    // Nothing do here, there is only 1 argument in stdin which is name of the program
+    if (argc <= 2) {
+        return 0;
+    }
+
+    // i = 1 - skip the first argument which is name of the program
+    for (int i = 1; i < argc; i++) {
+        if ((strcmp("-i", argv[i]) == 0) && (addr_flag == 0)) {
+            addr_flag = 1; 
+            i++;
+        }
+
+        // Get new address if it is not "-i" or "-p"
+        if (addr_flag == 1) {
+            if ((strcmp("-i", argv[i]) == 0) || (strcmp("-p", argv[i]) == 0)) {
+                printf("Wrong argument for \"-i\"! Using default \"127.0.0.1\".\n\n");
+                addr_flag = -1;
+                i++;
+            }
+            new_addr = argv[i];
+            addr_flag = -1;
+            i++;
+        }
+
+        if ((strcmp("-p", argv[i]) == 0) && (port_flag == 0)) {
+            port_flag = 1;
+            i++;
+        }
+
+
+        // Get new port if it is not "-i" or "-p"
+        if (port_flag == 1) {
+            if ((strcmp("-i", argv[i]) == 0) || (strcmp("-p", argv[i]) == 0)) {
+                printf("Wrong argument for \"-p\"! Using default \"8080\".\n\n");
+                port_flag = -1;
+                i++;
+            }
+            new_port = argv[i];
+            port_flag = -1;
+            i++;
+        }
+    }
+
+    if (new_addr != NULL) {
+        new_addr_len = strlen(new_addr); 
+        if (new_addr_len > ADDRLEN) {
+            printf("Too big address length! Using default address \"127.0.0.1\".\n\n");
+            return 0;
+        }
+
+        memcpy(addr, new_addr, strlen(new_addr));
+    }
+    if (new_port != NULL) {
+        new_port_len = strlen(new_port); 
+        if (new_port_len > PORTLEN) {
+            printf("Too big port length! Using default port \"8080\".\n\n");
+            return 0;
+        }
+
+        memcpy(port, new_port, strlen(new_port));
+    }
+
+    return 1;
 }
