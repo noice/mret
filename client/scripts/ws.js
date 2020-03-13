@@ -23,4 +23,4 @@ function new_data(){
     is_working = 0;
 }
 
-//ws.onopen = () => ws.send('echo "hello world!"\n');
+ws.onopen = () => setNewSize();

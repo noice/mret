@@ -402,3 +402,37 @@ function printChar(next_char){
     changeCurPos(curx, cury, curx + 1, cury);
     curx ++;
 }
+
+(function() {
+
+    window.addEventListener("resize", resizeThrottler, false);
+
+    var resizeTimeout;
+    function resizeThrottler() {
+        if ( !resizeTimeout  ) {
+            resizeTimeout = setTimeout(function() {
+                resizeTimeout = null;
+                actualResizeHandler();
+            }, 500);
+        }
+    }
+
+    function actualResizeHandler() {
+        setNewSize();
+    }
+}());
+
+function setNewSize(){
+    let width  = document.body.clientWidth - terminal.offsetLeft;
+    let height = document.body.clientHeight- terminal.offsetTop;
+
+    let elementWidth  = terminal.firstElementChild.firstElementChild.offsetWidth;
+    let elementHeight = terminal.firstElementChild.firstElementChild.offsetHeight;
+
+    let charWidth  = Math.floor(width  / elementWidth );
+    let charHeight = Math.floor(height / elementHeight);
+    
+    //console.log(width + '; ' + height);
+    //console.log(elementWidth + '; ' + elementHeight);
+    console.log(charWidth + '; ' + charHeight);
+}
