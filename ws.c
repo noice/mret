@@ -161,8 +161,9 @@ ws_get_body(char * buf, uint len) {
                 }
 
                 buf[msg_len] = 0;
-
-                return msg_len;
+                if(opcode == 0x1)
+                    return msg_len;
+                return BINARYRET; // To handle resize
                 break;
             case 0x8:
                 //Close connection

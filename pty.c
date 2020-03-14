@@ -21,15 +21,13 @@ int shell_run(char * cmd);
 int init_pty(PTY * pty, int connection_fd);
 int pty_loop(PTY * pty, int connection_fd);
 int pty_close(PTY * pty, int connection_fd);
+int pty_resize(PTY * pty, char * buf);
 
-volatile int propagate_sigwinch = 0; // If 1, then call ioctl to change winsize
 volatile int propagate_sigterm = 0;  // If 1, then call ioctl to exit
 
 void 
 signal_handler(int signal) { // Handler for SIGWINCH
-    if (signal == SIGWINCH) {
-        propagate_sigwinch = 1;
-    } else if (signal == SIGTERM) {
+    if (signal == SIGTERM) {
         propagate_sigterm = 1;
     }
 }
@@ -42,6 +40,7 @@ int ws_close(int connection_fd);
 int ws_ping(int connection_fd);
 int ws_pong(int connection_fd);
 int is_http_request(char * buf, uint len);
+
 
 
 int
@@ -105,10 +104,6 @@ init_pty(PTY * pty, int connection_fd) {
     pty->act.sa_handler = signal_handler;
     sigemptyset(&(pty->act.sa_mask));
     pty->act.sa_flags = 0;
-    if (sigaction(SIGWINCH, &pty->act, NULL) < 0) {
-        perror("ptypair: невозможно обработать SIGWINCH");
-        return 1;
-    }
 
     if (sigaction(SIGTERM, &pty->act, NULL) < 0) {
         perror("ptypair: невозможно обработать SIGWTERM");
@@ -172,6 +167,52 @@ pty_close(PTY * pty, int connection_fd) {
     exit(0);
 }
 
+int pty_resize(PTY * pty, char * buf) {
+    uint height = 0;
+    uint width  = 0;
+
+    if (strncmp(buf, "\x1b[8;", 4)){
+        return -1;
+    }
+
+    int i = 4;
+    while (buf[i] != ';') {
+        int num = buf[i] - '0';
+
+        if (num < 0 || num > 9){
+            return -1;
+        }
+
+        height *= 10;
+        height += num;
+        
+        ++ i;
+    }
+    ++ i;
+
+    while (buf[i] != 't') {
+        int num = buf[i] - '0';
+
+        if (num < 0 || num > 9){
+            return -1;
+        }
+
+        width *= 10;
+        width += num;
+        
+        ++ i;
+    }
+
+    pty->ws.ws_row = height;
+    pty->ws.ws_col = width;
+
+    if (ioctl(pty->master, TIOCSWINSZ, &pty->ws) < 0) {
+        perror("Can't set pty size");
+    }
+
+    return 0;
+}
+
 int
 pty_loop(PTY * pty, int connection_fd) {
     //Manage pty input/output
@@ -204,19 +245,6 @@ pty_loop(PTY * pty, int connection_fd) {
                 (POLLERR | POLLHUP | POLLNVAL)) {
             done = 1;
             break;
-        }
-
-        if (propagate_sigwinch) {
-            if (ioctl(STDIN_FILENO, TIOCGWINSZ, &pty->ws) < 0) {
-                perror("ptypair: не удается получить размеры окна");
-            }
-
-            if (ioctl(pty->master, TIOCSWINSZ, &pty->ws) < 0) {
-                perror("не удается восстановить размеры окна");
-            }
-
-            propagate_sigwinch = 0;
-            continue;
         }
 
         if (propagate_sigterm) {
@@ -252,6 +280,8 @@ pty_loop(PTY * pty, int connection_fd) {
                     } else if (len == PINGRET) {
                         printf("PONG for PING\n");
                         ws_pong(connection_fd);
+                    } else if (len == BINARYRET) { //Resize
+                        pty_resize(pty, pty->buf);
                     }
                 } else {
                     //http request

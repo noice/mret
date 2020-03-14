@@ -20,6 +20,7 @@
 #define MSGSIZE        65536
 
 // Frame's defines
+#define BINARYRET      -13
 #define CLOSERET       -11
 #define PONGRET        -10
 #define PINGRET        -12

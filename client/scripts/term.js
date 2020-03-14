@@ -377,7 +377,7 @@ function nextChar(next_char) {
             break;
     }
 
-    window.scrollTo(0, document.body.scrollHeight);
+    window.scrollTo(0, document.body.clientHeight);
 }
 
 
@@ -435,4 +435,9 @@ function setNewSize(){
     //console.log(width + '; ' + height);
     //console.log(elementWidth + '; ' + elementHeight);
     console.log(charWidth + '; ' + charHeight);
+
+    let encoder = new TextEncoder();
+
+    let uint8Array = encoder.encode('\x1b[8;' + charHeight + ';' + charWidth + 't');
+    ws.send(uint8Array);
 }
