@@ -7,10 +7,11 @@ function Style () {
     this.color = dcolor;
     this.bgcolor = dbgcolor;
     this.curcolor = dcolor;
-    this.curbrcolor = dbgcolor;
+    this.curbgcolor = dbgcolor;
     this.brightness = 0;
 }
 
+var defaultStyle = new Style();
 
 
 const colormap = {
@@ -77,8 +78,8 @@ function handleCGR(buf) {
         let it = buf[i];
         switch(it) {
             case 0:
-                screen.style.color = dcolor;
-                screen.style.bgcolor = dbgcolor;
+                screen.style.color = defaultStyle.color;
+                screen.style.bgcolor = defaultStyle.bgcolor;
                 screen.style.brightness = 0;
                 break;
             case 1:

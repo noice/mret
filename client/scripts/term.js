@@ -27,8 +27,8 @@ function init() {
     terminal.appendChild(document.createElement('div'));
     let charElem = document.createElement('span');
     charElem.appendChild(document.createTextNode('\xA0'));
-    charElem.style.color = dcurcolor;
-    charElem.style.backgroundColor = dcurbgcolor;
+    charElem.style.color = defaultStyle.curcolor;
+    charElem.style.backgroundColor = defaultStyle.curbgcolor;
     terminal.lastElementChild.appendChild(charElem);
 }
 
@@ -39,7 +39,7 @@ function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
         
         prevcur = terminal.childNodes[prevcury].childNodes[prevcurx];
         prevcur.style.color = screen.style.curcolor;
-        prevcur.style.backgroundColor = screen.style.curbrcolor;
+        prevcur.style.backgroundColor = screen.style.curbgcolor;
     }
 
     while (terminal.childNodes.length <= newcury){
@@ -49,18 +49,18 @@ function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
     while (terminal.childNodes[newcury].childNodes.length <= newcurx){
         let charElem = document.createElement('span');
         charElem.appendChild(document.createTextNode('\xA0'));
-        charElem.style.color = dcolor;
-        charElem.style.backgroundColor = dbgcolor;
+        charElem.style.color = defaultStyle.color;
+        charElem.style.backgroundColor = defaultStyle.bgcolor;
         
         terminal.childNodes[newcury].appendChild(charElem);
     }
 
     newcur = terminal.childNodes[newcury].childNodes[newcurx];
     screen.style.curcolor = newcur.style.color;
-    screen.style.curbrcolor = newcur.style.backgroundColor;
+    screen.style.curbgcolor = newcur.style.backgroundColor;
 
-    newcur.style.color = dcurcolor;
-    newcur.style.backgroundColor = dcurbgcolor;
+    newcur.style.color = defaultStyle.curcolor;
+    newcur.style.backgroundColor = defaultStyle.curbgcolor;
 }
 
 function handleCSI() {
@@ -154,8 +154,8 @@ function handleCSI() {
                     }
                     let charElem = document.createElement('span');
                     charElem.appendChild(document.createTextNode('\xA0'));
-                    charElem.style.color = dcolor;
-                    charElem.style.backgroundColor = dbgcolor;
+                    charElem.style.color = defaultStyle.color;
+                    charElem.style.backgroundColor = defaultStyle.bgcolor;
                     terminal.childNodes[inode].append(charElem);
                     
                 }
@@ -197,8 +197,8 @@ function handleCSI() {
              
                 let charElem = document.createElement('span');
                 charElem.appendChild(document.createTextNode('\xA0'));
-                charElem.style.color = dcolor;
-                charElem.style.backgroundColor = dbgcolor;
+                charElem.style.color = defaultStyle.color;
+                charElem.style.backgroundColor = defaultStyle.bgcolor;
                 terminal.firstElementChild.append(charElem);
              
                 changeCurPos(screen.curx, screen.cury + 1, screen.curx, screen.cury);
@@ -384,18 +384,22 @@ function printChar(next_char){
     while (terminal.childNodes[screen.cury].childNodes.length <= screen.curx){
         let charElem = document.createElement('span');
         charElem.appendChild(document.createTextNode('\xA0'));
-        charElem.style.color = dcolor;
-        charElem.style.backgroundColor = dbgcolor;
+        charElem.style.color = defaultStyle.color;
+        charElem.style.backgroundColor = defaultStyle.bgcolor;
         
         terminal.childNodes[screen.cury].appendChild(charElem);
     }
 
     terminal.childNodes[screen.cury].childNodes[screen.curx].innerText = next_char;
     screen.style.curcolor = screen.style.color;
-    screen.style.curbrcolor = screen.style.bgcolor;
+    screen.style.curbgcolor = screen.style.bgcolor;
 
     changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
     screen.curx ++;
+
+    //changeChar(next_char, screen.curx, screen.cury);
+    //changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
+    //screen.curx ++;
 }
 
 (function() {
@@ -431,3 +435,51 @@ function setNewSize(){
     let uint8Array = encoder.encode('\x1b[8;' + charHeight + ';' + charWidth + 't');
     ws.send(uint8Array);
 }
+/*
+function changeChar(next_char, x, y) {
+    while (terminal.childNodes.length <= y){
+        terminal.appendChild(document.createElement('div'));
+    }
+    let ix = 0;
+    let curdiv = terminal.childNodes[y];
+    for (let i = 0; i < curdiv.childNodes.length; i ++){
+        ix += curdiv.childNodes[i].innerText.length;
+        if (x < ix) {
+            //Insert char
+            
+            return;
+        }
+    }
+
+    if (x > ix) {
+        let inc = x - ix - 1;
+
+        let charElem = document.createElement('span');
+        charElem.appendChild(document.createTextNode('\xA0'.repeat(inc)));
+        charElem.style.color = defaultStyle.color;
+        charElem.style.backgroundColor = defaultStyle.bgcolor;
+        
+        curdiv.appendChild(charElem);
+    }
+    
+    if(_.isEqual(screen.style, default)){
+        curdiv.lastElementChild.innerText += next_char;
+        return;
+    }
+
+    s
+
+
+    if (terminal.childNodes[y].childNodes.length <= x){
+        let charElem = document.createElement('span');
+        charElem.appendChild(document.createTextNode('\xA0'));
+        charElem.style.color = defaultStyle.color;
+        charElem.style.backgroundColor = defaultStyle.bgcolor;
+        
+        terminal.childNodes[screen.cury].appendChild(charElem);
+    }
+
+    terminal.childNodes[screen.cury].childNodes[screen.curx].innerText = next_char;
+    screen.style.curcolor = screen.style.color;
+    screen.style.curbgcolor = screen.style.bgcolor;
+}*/
