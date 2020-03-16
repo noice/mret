@@ -1,18 +1,19 @@
 var dcolor = 'white';
-var acolor = dcolor;
-
-var brightness = 0;
-
 var dbgcolor = 'black';
-var abgcolor = dbgcolor;
-
-var curcolor = dcolor;
-var curbgcolor = dbgcolor;
-
 var dcurcolor = 'black';
 var dcurbgcolor = 'white';
 
-var colormap = {
+function Style () {
+    this.color = dcolor;
+    this.bgcolor = dbgcolor;
+    this.curcolor = dcolor;
+    this.curbrcolor = dbgcolor;
+    this.brightness = 0;
+}
+
+
+
+const colormap = {
     0: 'black',
     1: 'maroon',
     2: 'green',
@@ -23,7 +24,7 @@ var colormap = {
     7: 'silver'
 };
 
-var brcolormap = {
+const brcolormap = {
     0: 'gray',
     1: 'red',
     2: 'lime',
@@ -34,7 +35,7 @@ var brcolormap = {
     7: 'white'
 };
 
-var col8bitmap = {
+const col8bitmap = {
     0: '00',
     1: '5F',
     2: '87',
@@ -76,12 +77,12 @@ function handleCGR(buf) {
         let it = buf[i];
         switch(it) {
             case 0:
-                acolor = dcolor;
-                abgcolor = dbgcolor;
-                brightness = 0;
+                screen.style.color = dcolor;
+                screen.style.bgcolor = dbgcolor;
+                screen.style.brightness = 0;
                 break;
             case 1:
-                brightness = 1;
+                screen.style.brightness = 1;
                 break;
             case 30:
             case 31:
@@ -91,14 +92,14 @@ function handleCGR(buf) {
             case 35:
             case 36:
             case 37:
-                if(brightness)
-                    acolor = brcolormap[it % 10];
+                if(screen.style.brightness)
+                    screen.style.color = brcolormap[it % 10];
                 else 
-                    acolor =   colormap[it % 10];
+                    screen.style.color =   colormap[it % 10];
                 break;
 
             case 38: // 8-bit and 24-bit colors
-                acolor = getColor(buf, i);
+                screen.style.color = getColor(buf, i);
                 if(buf[i + 1] == 5)
                     i += 2;
                 else if(buf[i + 1] == 2)
@@ -113,14 +114,14 @@ function handleCGR(buf) {
             case 45:
             case 46:
             case 47:
-                if(brightness)
-                    abgcolor = brcolormap[it % 10];
+                if(screen.style.brightness)
+                    screen.style.bgcolor = brcolormap[it % 10];
                 else 
-                    abgcolor =   colormap[it % 10];
+                    screen.style.bgcolor =   colormap[it % 10];
                 break;
 
             case 48: // 8-bit and 24-bit background colors
-                abgcolor = getColor(buf, i);
+                screen.style.bgcolor = getColor(buf, i);
                 if(buf[i + 1] == 5)
                     i += 2;
                 else if(buf[i + 1] == 2)

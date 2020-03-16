@@ -1,26 +1,27 @@
-var curx;
-var cury;
-
 var escape_state = 0;
 var escape_sequence = '';
 var CSI_priv = '';
 var OSC_msg = '';
 
+function Screen() {
+    this.style = new Style();
+    this.curx = 0;
+    this.cury = 0;
+    this.saved_curx = 0;
+    this.saved_cury = 0;
+    this.cur_visible = 1;
+};
+
+screen = new Screen();
+altscreen = new Screen();
+
 var alternate_screen = '';
-var alternate_curx = -1;
-var alternate_cury = -1;
-
-var saved_curx = 0;
-var saved_cury = 0;
-
-var cur_visible = 0;
-
 var terminal;
 init();
 
 function init() {
-    curx = 0;
-    cury = 0;
+    screen.curx = 0;
+    screen.cury = 0;
 
     terminal = document.getElementById('terminal');
     terminal.appendChild(document.createElement('div'));
@@ -37,8 +38,8 @@ function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
         terminal.childNodes[prevcury].childNodes.length > prevcurx) {
         
         prevcur = terminal.childNodes[prevcury].childNodes[prevcurx];
-        prevcur.style.color = curcolor;
-        prevcur.style.backgroundColor = curbgcolor;
+        prevcur.style.color = screen.style.curcolor;
+        prevcur.style.backgroundColor = screen.style.curbrcolor;
     }
 
     while (terminal.childNodes.length <= newcury){
@@ -55,8 +56,8 @@ function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
     }
 
     newcur = terminal.childNodes[newcury].childNodes[newcurx];
-    curcolor = newcur.style.color;
-    curbgcolor = newcur.style.backgroundColor;
+    screen.style.curcolor = newcur.style.color;
+    screen.style.curbrcolor = newcur.style.backgroundColor;
 
     newcur.style.color = dcurcolor;
     newcur.style.backgroundColor = dcurbgcolor;
@@ -81,45 +82,45 @@ function handleCSI() {
         case 'A': //Cursor Up
             if(buf[0] == 0)
                 buf[0] = 1;
-            changeCurPos(curx, cury, curx, cury - buf[0]);
-            cury -= buf[0];
+            changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury - buf[0]);
+            screen.cury -= buf[0];
             break;
         case 'B': //Cursor Down
             if(buf[0] == 0)
                 buf[0] = 1;
-            changeCurPos(curx, cury, curx, cury + buf[0]);
-            cury += buf[0];
+            changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury + buf[0]);
+            screen.cury += buf[0];
             break;
         case 'C': //Cursor Right
             if(buf[0] == 0)
                 buf[0] = 1;
-            changeCurPos(curx, cury, curx + buf[0], cury);
-            curx += buf[0];
+            changeCurPos(screen.curx, screen.cury, screen.curx + buf[0], screen.cury);
+            screen.curx += buf[0];
             break;
         case 'D': //Cursor Left
             if(buf[0] == 0)
                 buf[0] = 1;
-            changeCurPos(curx, cury, curx - buf[0], cury);
-            curx -= buf[0];
+            changeCurPos(screen.curx, screen.cury, screen.curx - buf[0], screen.cury);
+            screen.curx -= buf[0];
             break;
         case 'E': //Cursor Next Line
             if(buf[0] == 0)
                 buf[0] = 1;
-            changeCurPos(curx, cury, 0, cury + buf[0]);
-            curx = 0;
-            cury += buf[0];
+            changeCurPos(screen.curx, screen.cury, 0, screen.cury + buf[0]);
+            screen.curx = 0;
+            screen.cury += buf[0];
             break;
         case 'F': //Cursor Previous Line
             if(buf[0] == 0)
                 buf[0] = 1;
-            changeCurPos(curx, cury, 0, cury - buf[0]);
-            curx = 0;
-            cury -= buf[0];
+            changeCurPos(screen.curx, screen.cury, 0, screen.cury - buf[0]);
+            screen.curx = 0;
+            screen.cury -= buf[0];
             break; 
         case 'G': //Cursor Horizontal Absolute
             buf[0] -= 1;
-            changeCurPos(curx, cury, buf[0], cury);
-            curx = buf[0];
+            changeCurPos(screen.curx, screen.cury, buf[0], screen.cury);
+            screen.curx = buf[0];
             break; 
         case 'H': //Cursor Position
         case 'f':
@@ -128,15 +129,15 @@ function handleCSI() {
             if(buf.length == 1)
                 buf.push(1);
             buf[1] -= 1;
-            changeCurPos(curx, cury, buf[1], buf[0]);
-            curx = buf[1];
-            cury = buf[0];
+            changeCurPos(screen.curx, screen.cury, buf[1], buf[0]);
+            screen.curx = buf[1];
+            screen.cury = buf[0];
             break; 
         case 'J': //Erase Data
             if(buf[0] == 0 || buf[0] == 2){
-                let curdiv = terminal.childNodes[cury];
-                while(curdiv.childNodes[curx] != curdiv.lastElementChild){
-                    curdiv.removeChild(curdiv.childNodes[curx]);
+                let curdiv = terminal.childNodes[screen.cury];
+                while(curdiv.childNodes[screen.curx] != curdiv.lastElementChild){
+                    curdiv.removeChild(curdiv.childNodes[screen.curx]);
                 }
                 while(curdiv != terminal.lastElementChild){
                     terminal.removeChild(terminal.lastElementChild);
@@ -144,8 +145,8 @@ function handleCSI() {
             } 
 
             if(buf[0] == 1 || buf[0] == 2){
-                for (let inode = 0; inode < terminal.childNodes[cury].childNodes.length; inode++) {
-                    terminal.childNodes[cury].childNodes[inode].innerText = '\xA0';
+                for (let inode = 0; inode < terminal.childNodes[screen.cury].childNodes.length; inode++) {
+                    terminal.childNodes[screen.cury].childNodes[inode].innerText = '\xA0';
                 }
                 for (let inode = 0; inode < terminal.childNodes.length; inode++) {
                     while (terminal.childNodes[inode].hasChildNodes()) {
@@ -162,29 +163,29 @@ function handleCSI() {
             break;
         case 'K': //Erase in Line
             if(buf[0] == 0 || buf[0] == 2){
-                let curdiv = terminal.childNodes[cury];
-                curdiv.childNodes[curx].innerText = '\xA0';
-                while(curdiv.childNodes[curx] != curdiv.lastElementChild){
+                let curdiv = terminal.childNodes[screen.cury];
+                curdiv.childNodes[screen.curx].innerText = '\xA0';
+                while(curdiv.childNodes[screen.curx] != curdiv.lastElementChild){
                     curdiv.removeChild(curdiv.lastElementChild);
                 }
             }
             if(buf[0] == 1 || buf[0] == 2){
-                let curdiv = terminal.childNodes[cury];
-                for(let inode = 0; inode <= curx && inode < curdiv.childNodes.length; inode ++){
+                let curdiv = terminal.childNodes[screen.cury];
+                for(let inode = 0; inode <= screen.curx && inode < curdiv.childNodes.length; inode ++){
                     curdiv.childNodes[inode].innerText = '\xA0';
                 }
             }
             break;
         case 'P':
-            let curdiv = terminal.childNodes[cury];
-            changeCurPos(curx, cury, curx + 1, cury);
-            curdiv.removeChild(curdiv.childNodes[curx]);
+            let curdiv = terminal.childNodes[screen.cury];
+            changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
+            curdiv.removeChild(curdiv.childNodes[screen.curx]);
             break;
         case 'S': //Scroll Up
             if(buf[0] == 0)
                 buf[0] = 1;
             for(let i = 0; i < buf[0]; i ++){
-                changeCurPos(curx, cury, curx, cury + 1);
+                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury + 1);
                 terminal.removeChild(terminal.firstElementChild);
             }
             break;
@@ -200,41 +201,35 @@ function handleCSI() {
                 charElem.style.backgroundColor = dbgcolor;
                 terminal.firstElementChild.append(charElem);
              
-                changeCurPos(curx, cury + 1, curx, cury);
+                changeCurPos(screen.curx, screen.cury + 1, screen.curx, screen.cury);
             }
             break;
         case 'n': //Device Status Report
             if(buf[0] == 6){
-                ws.send('\x1B[' + (cury + 1) + ';' + (curx + 1)  + 'R');
-                console.log('\x1B[' + (cury + 1) + ';' + (curx + 1)  + 'R');
+                ws.send('\x1B[' + (screen.cury + 1) + ';' + (screen.curx + 1)  + 'R');
+                console.log('\x1B[' + (screen.cury + 1) + ';' + (screen.curx + 1)  + 'R');
             }
             break;
         case 's': //Save Cursor Position
-            saved_curx = curx;
-            saved_cury = cury;
+            screen.saved_curx = screen.curx;
+            screen.saved_cury = screen.cury;
             break;
         case 'u': //Restore Cursor Position
-            changeCurPos(curx, cury, saved_curx, saved_cury);
-            curx = saved_curx;
-            cury = saved_cury;
+            changeCurPos(screen.curx, screen.cury, screen.saved_curx, screen.saved_cury);
+            screen.curx = screen.saved_curx;
+            screen.cury = screen.saved_cury;
             break;
         case '?h':
             if(buf[0] == 1049){
-                [curx, alternate_curx] = [alternate_curx, curx];
-                [cury, alternate_cury] = [alternate_cury, cury];
+                [screen, altscreen] = [altscreen, screen];
 
                 [terminal.innerHTML, alternate_screen] = [alternate_screen, terminal.innerHTML];
-                if(curx == -1 || cury == -1){
-                    changeCurPos(curx, cury, 0, 0);
-                    curx = 0;
-                    cury = 0;
-                }
+                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
             }
             break;
         case '?l':
-            if(buf[0] == 1049 && curx != -1){
-                [curx, alternate_curx] = [alternate_curx, curx];
-                [cury, alternate_cury] = [alternate_cury, cury];
+            if(buf[0] == 1049 && screen.curx != -1){
+                [screen, altscreen] = [altscreen, screen];
 
                 [terminal.innerHTML, alternate_screen] = [alternate_screen, terminal.innerHTML];
             }
@@ -353,22 +348,22 @@ function nextChar(next_char) {
             break;
 
         case '\n':
-            changeCurPos(curx, cury, curx, cury + 1);
-            cury += 1;
+            changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury + 1);
+            screen.cury += 1;
             break;
 
         case '\r': //CR
-            changeCurPos(curx, cury, 0, cury);
-            curx = 0;
+            changeCurPos(screen.curx, screen.cury, 0, screen.cury);
+            screen.curx = 0;
             break;
 
         case '\x07': //BELL
             break;
 
         case '\x08': //Backspace
-            if(curx > 0){
-                changeCurPos(curx, cury, curx - 1, cury);
-                curx --;
+            if(screen.curx > 0){
+                changeCurPos(screen.curx, screen.cury, screen.curx - 1, screen.cury);
+                screen.curx --;
             }
             break;
 
@@ -377,34 +372,33 @@ function nextChar(next_char) {
             break;
     }
 
-    window.scrollTo(0, document.body.clientHeight);
+    window.scrollTo(0, 0);
 }
 
 
 function printChar(next_char){
-    while (terminal.childNodes.length <= cury){
+    while (terminal.childNodes.length <= screen.cury){
         terminal.appendChild(document.createElement('div'));
     }
   
-    while (terminal.childNodes[cury].childNodes.length <= curx){
+    while (terminal.childNodes[screen.cury].childNodes.length <= screen.curx){
         let charElem = document.createElement('span');
         charElem.appendChild(document.createTextNode('\xA0'));
         charElem.style.color = dcolor;
         charElem.style.backgroundColor = dbgcolor;
         
-        terminal.childNodes[cury].appendChild(charElem);
+        terminal.childNodes[screen.cury].appendChild(charElem);
     }
 
-    terminal.childNodes[cury].childNodes[curx].innerText = next_char;
-    curcolor = acolor;
-    curbgcolor = abgcolor;
+    terminal.childNodes[screen.cury].childNodes[screen.curx].innerText = next_char;
+    screen.style.curcolor = screen.style.color;
+    screen.style.curbrcolor = screen.style.bgcolor;
 
-    changeCurPos(curx, cury, curx + 1, cury);
-    curx ++;
+    changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
+    screen.curx ++;
 }
 
 (function() {
-
     window.addEventListener("resize", resizeThrottler, false);
 
     var resizeTimeout;
@@ -432,10 +426,6 @@ function setNewSize(){
     let charWidth  = Math.floor(width  / elementWidth );
     let charHeight = Math.floor(height / elementHeight);
     
-    //console.log(width + '; ' + height);
-    //console.log(elementWidth + '; ' + elementHeight);
-    console.log(charWidth + '; ' + charHeight);
-
     let encoder = new TextEncoder();
 
     let uint8Array = encoder.encode('\x1b[8;' + charHeight + ';' + charWidth + 't');
