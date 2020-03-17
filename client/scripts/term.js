@@ -33,7 +33,7 @@ function init() {
 }
 
 function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
-    if (terminal.childNodes.length > prevcury && 
+    /*if (terminal.childNodes.length > prevcury && 
         terminal.childNodes[prevcury]         &&
         terminal.childNodes[prevcury].childNodes.length > prevcurx) {
         
@@ -61,6 +61,7 @@ function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
 
     newcur.style.color = defaultStyle.curcolor;
     newcur.style.backgroundColor = defaultStyle.curbgcolor;
+    */
 }
 
 function handleCSI() {
@@ -377,6 +378,7 @@ function nextChar(next_char) {
 
 
 function printChar(next_char){
+/*
     while (terminal.childNodes.length <= screen.cury){
         terminal.appendChild(document.createElement('div'));
     }
@@ -396,10 +398,175 @@ function printChar(next_char){
 
     changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
     screen.curx ++;
+*/
+    changeChar(next_char, screen.curx, screen.cury);
+    changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
+    screen.curx ++;
+}
 
-    //changeChar(next_char, screen.curx, screen.cury);
-    //changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
-    //screen.curx ++;
+function changeChar(next_char, x, y) {
+    while (terminal.childNodes.length <= y){
+        terminal.appendChild(document.createElement('div'));
+    }
+
+    let ix = 0;
+    let curdiv = terminal.childNodes[y];
+    for (let i = 0; i < curdiv.childNodes.length; i ++){
+        //console.log(next_char);
+        ix += curdiv.childNodes[i].innerText.length;
+
+        if (x < ix) {
+            //Insert char
+            let curnode = curdiv.childNodes[i];
+            let pos = x - (ix - curnode.innerText.length); 
+            //console.log(i + '  <==>  ' + pos + ' = ' + x + ' - (' + ix + ' - ' + curnode.innerText.length + ')');
+            let text = curnode.textContent;
+            
+            if(curnode.style.color == screen.style.color &&
+               curnode.style.backgroundColor == screen.style.bgcolor) {
+                curnode.textContent = text.slice(0, pos) + next_char + text.slice(pos + 1);
+                return;
+            }
+
+            if(curnode.textContent.length == 1){
+                let prevnode = curnode.previousSibling;
+                let nextnode = curnode.nextSibling;
+
+                if(prevnode && 
+                   screen.style.color   == prevnode.style.color &&
+                   screen.style.bgcolor == prevnode.style.backgroundColor
+                ) {
+                    if(nextnode && 
+                       screen.style.color   == nextnode.style.color &&
+                       screen.style.bgcolor == nextnode.style.backgroundColor
+                    ) {
+                        //Merging current node with previous and next
+                        prevnode.textContent += next_char;
+                        prevnode.textContent += nextnode.textContent;
+                        curdiv.removeChild(nextnode);
+                        curdiv.removeChild(curnode);
+                        return;
+                    }
+
+                    //Merging current node with previous
+                    prevnode.textContent += next_char;
+                    curdiv.removeChild(curnode);
+                    return;
+                }
+
+                if(nextnode && 
+                   screen.style.color   == nextnode.style.color &&
+                   screen.style.bgcolor == nextnode.style.backgroundColor
+                ) {
+                    //Merging current node with next
+                    nextnode.textContent = next_char + nextnode.textContent;
+                    curdiv.removeChild(curnode);
+                    return;
+                }
+
+                curnode.textContent = next_char;
+                curnode.style.color = screen.style.color;
+                curnode.style.backgroundColor = screen.style.bgcolor;
+                return;
+            }
+
+            if(pos == 0) {
+                if(i && 
+                   screen.style.color   == curdiv.childNodes[i - 1].style.color &&
+                   screen.style.bgcolor == curdiv.childNodes[i - 1].style.backgroundColor
+                ) {
+                    curnode.textContent = curnode.textContent.slice(1);
+                    curdiv.childNodes[i - 1].textContent += next_char;
+                } else {
+                    curnode.textContent = curnode.textContent.slice(1);
+
+                    let charElem = document.createElement('span');
+                    charElem.appendChild(document.createTextNode(next_char));
+
+                    charElem.style.color = screen.style.color;
+                    charElem.style.backgroundColor = screen.style.bgcolor;
+                    
+                    curdiv.insertBefore(charElem, curnode);
+                }
+                return;
+            }
+
+            if(pos == curnode.textContent.length - 1) {
+                if(i != curdiv.childNodes.length - 1 && 
+                   screen.style.color   == curdiv.childNodes[i + 1].style.color &&
+                   screen.style.bgcolor == curdiv.childNodes[i + 1].style.backgroundColor
+                ) {
+                    curnode.textContent = curnode.textContent.slice(0, -1);
+                    curdiv.childNodes[i + 1].textContent = next_char + curdiv.childNodes[i + 1].textContent;
+                } else {
+                    curnode.textContent = curnode.textContent.slice(0, -1);
+
+                    let charElem = document.createElement('span');
+                    charElem.appendChild(document.createTextNode(next_char));
+
+                    charElem.style.color = screen.style.color;
+                    charElem.style.backgroundColor = screen.style.bgcolor;
+                    
+                    curdiv.insertBefore(charElem, curnode.nextSibling);
+                }
+                return;
+            }
+
+
+            let charElem = document.createElement('span');
+            charElem.appendChild(document.createTextNode(curnode.textContent.slice(0, pos)));
+
+            charElem.style.color = curnode.style.color;
+            charElem.style.backgroundColor = curnode.style.backgroundColor;
+            
+            curdiv.insertBefore(charElem, curnode);
+
+
+            charElem = document.createElement('span');
+            charElem.appendChild(document.createTextNode(next_char));
+
+            charElem.style.color = screen.style.color;
+            charElem.style.backgroundColor = screen.style.bgcolor;
+            
+            curdiv.insertBefore(charElem, curnode);
+
+
+            curnode.textContent = curnode.textContent.slice(pos + 1);
+        }
+    }
+
+    if (x > ix) {
+        let inc = x - ix - 1;
+
+        if(curdiv.lastElementChild &&
+           defaultStyle.style.color   == curdiv.lastElementChild.style.color &&
+           defaultStyle.style.bgcolor == curdiv.lastElementChild.style.backgroundColor) {
+            curdiv.lastElementChild.innerText += '\xA0'.repeat(inc);
+            return;
+        }
+
+        let spaceElem = document.createElement('span');
+        spaceElem.appendChild(document.createTextNode('\xA0'.repeat(inc)));
+        spaceElem.style.color = defaultStyle.color;
+        spaceElem.style.backgroundColor = defaultStyle.bgcolor;
+        
+        curdiv.appendChild(spaceElem);
+    }
+    
+    if(curdiv.lastElementChild &&
+       screen.style.color   == curdiv.lastElementChild.style.color &&
+       screen.style.bgcolor == curdiv.lastElementChild.style.backgroundColor) {
+        curdiv.lastElementChild.innerText += next_char;
+        return;
+    }
+
+    let charElem = document.createElement('span');
+    charElem.appendChild(document.createTextNode(next_char));
+
+    charElem.style.color = screen.style.color;
+    charElem.style.backgroundColor = screen.style.bgcolor;
+
+    curdiv.appendChild(charElem);
 }
 
 (function() {
@@ -431,55 +598,6 @@ function setNewSize(){
     let charHeight = Math.floor(height / elementHeight);
     
     let encoder = new TextEncoder();
-
     let uint8Array = encoder.encode('\x1b[8;' + charHeight + ';' + charWidth + 't');
     ws.send(uint8Array);
 }
-/*
-function changeChar(next_char, x, y) {
-    while (terminal.childNodes.length <= y){
-        terminal.appendChild(document.createElement('div'));
-    }
-    let ix = 0;
-    let curdiv = terminal.childNodes[y];
-    for (let i = 0; i < curdiv.childNodes.length; i ++){
-        ix += curdiv.childNodes[i].innerText.length;
-        if (x < ix) {
-            //Insert char
-            
-            return;
-        }
-    }
-
-    if (x > ix) {
-        let inc = x - ix - 1;
-
-        let charElem = document.createElement('span');
-        charElem.appendChild(document.createTextNode('\xA0'.repeat(inc)));
-        charElem.style.color = defaultStyle.color;
-        charElem.style.backgroundColor = defaultStyle.bgcolor;
-        
-        curdiv.appendChild(charElem);
-    }
-    
-    if(_.isEqual(screen.style, default)){
-        curdiv.lastElementChild.innerText += next_char;
-        return;
-    }
-
-    s
-
-
-    if (terminal.childNodes[y].childNodes.length <= x){
-        let charElem = document.createElement('span');
-        charElem.appendChild(document.createTextNode('\xA0'));
-        charElem.style.color = defaultStyle.color;
-        charElem.style.backgroundColor = defaultStyle.bgcolor;
-        
-        terminal.childNodes[screen.cury].appendChild(charElem);
-    }
-
-    terminal.childNodes[screen.cury].childNodes[screen.curx].innerText = next_char;
-    screen.style.curcolor = screen.style.color;
-    screen.style.curbgcolor = screen.style.bgcolor;
-}*/
