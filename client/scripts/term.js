@@ -64,6 +64,19 @@ function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
     newcur.style.color = defaultStyle.curcolor;
     newcur.style.backgroundColor = defaultStyle.curbgcolor;
     */
+    while (terminal.childNodes.length <= newcury){
+        terminal.appendChild(document.createElement('div'));
+    }
+
+    let contentsize = terminal.childNodes[newcury].textContent.length;
+    if (contentsize <= newcurx){
+        let charElem = document.createElement('span');
+        charElem.appendChild(document.createTextNode('\xA0'.repeat(newcurx + 1 - contentsize)));
+        charElem.style.color = defaultStyle.color;
+        charElem.style.backgroundColor = defaultStyle.bgcolor;
+        
+        terminal.childNodes[newcury].appendChild(charElem);
+    }
 }
 
 function handleCSI() {
@@ -139,32 +152,44 @@ function handleCSI() {
         case 'J': //Erase Data
             if(buf[0] == 0 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
-                while(curdiv.childNodes[screen.curx] != curdiv.lastElementChild){
-                    curdiv.removeChild(curdiv.childNodes[screen.curx]);
-                }
+
                 while(curdiv != terminal.lastElementChild){
                     terminal.removeChild(terminal.lastElementChild);
+                }
+
+                while(terminal.childNodes.length < theight){
+                    terminal.appendChild(document.createElement('div'));
+
+                    let spaceElem = document.createElement('span');
+                    spaceElem.appendChild(document.createTextNode('\xA0'.repeat(twidth)));
+                    spaceElem.style.color = screen.style.color;
+                    spaceElem.style.backgroundColor = screen.style.bgcolor;
+                    
+                    terminal.lastElementChild.appendChild(spaceElem);
                 }
             } 
 
             if(buf[0] == 1 || buf[0] == 2){
-                for (let inode = 0; inode < terminal.childNodes[screen.cury].childNodes.length; inode++) {
-                    terminal.childNodes[screen.cury].childNodes[inode].innerText = '\xA0';
+                let curdiv = terminal.childNodes[screen.cury];
+
+                while(curdiv != terminal.firstElementChild){
+                    terminal.removeChild(terminal.firstElementChild);
                 }
 
-                for (let inode = 0; inode < terminal.childNodes.length; inode++) {
-                    while (terminal.childNodes[inode].hasChildNodes()) {
-                        terminal.childNodes[inode].removeChild(terminal.childNodes[inode].firstChild);
-                    }
+                while(terminal.childNodes.length <= screen.cury){
+                    terminal.insertBefore(document.createElement('div'), terminal.firstElementChild);
 
-                    let charElem = document.createElement('span');
-                    charElem.appendChild(document.createTextNode('\xA0'));
-                    charElem.style.color = defaultStyle.color;
-                    charElem.style.backgroundColor = defaultStyle.bgcolor;
-                    terminal.childNodes[inode].append(charElem);
+                    let spaceElem = document.createElement('span');
+                    spaceElem.appendChild(document.createTextNode('\xA0'.repeat(twidth)));
+                    spaceElem.style.color = screen.style.color;
+                    spaceElem.style.backgroundColor = screen.style.bgcolor;
+                    
+                    terminal.firstElementChild.appendChild(spaceElem);
                 }
-            }
-            break;
+            } 
+
+            //Erase in Line functionality from the next case
+            //break;
         case 'K': //Erase in Line
             if(buf[0] == 0 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
@@ -172,11 +197,11 @@ function handleCSI() {
                 let ix = 0;
 
                 for (let i = 0; i < curdiv.childNodes.length; i ++) {
-                    ix += curdiv.childNodes[i].innerText.length;
+                    ix += curdiv.childNodes[i].textContent.length;
              
                     if (x < ix) {
                         let curnode = curdiv.childNodes[i];
-                        let pos = x - (ix - curnode.innerText.length); 
+                        let pos = x - (ix - curnode.textContent.length); 
                         let text = curnode.textContent;
 
                         while (curnode.nextSibling) 
@@ -203,11 +228,11 @@ function handleCSI() {
                 let ix = 0;
 
                 for (let i = 0; i < curdiv.childNodes.length; i ++) {
-                    ix += curdiv.childNodes[i].innerText.length;
+                    ix += curdiv.childNodes[i].textContent.length;
              
                     if (x < ix) {
                         let curnode = curdiv.childNodes[i];
-                        let pos = x - (ix - curnode.innerText.length); 
+                        let pos = x - (ix - curnode.textContent.length); 
                         let text = curnode.textContent;
 
                         while (curnode.previousSibling) 
@@ -233,7 +258,21 @@ function handleCSI() {
         case 'P':
             let curdiv = terminal.childNodes[screen.cury];
             changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
-            curdiv.removeChild(curdiv.childNodes[screen.curx]);
+
+            let x = screen.curx;
+            let ix = 0;
+
+            for (let i = 0; i < curdiv.childNodes.length; i ++) {
+                ix += curdiv.childNodes[i].textContent.length;
+            
+                if (x < ix) {
+                    let pos = x - (ix - curdiv.childNodes[i].textContent.length); 
+                    let text = curdiv.childNodes[i].textContent;
+                    curdiv.childNodes[i].textContent = text.slice(0, pos) + text.slice(pos + 1);
+                }
+            }
+
+            mergeSameStyle(screen.cury);
             break;
         case 'S': //Scroll Up
             if(buf[0] == 0)
@@ -445,7 +484,7 @@ function printChar(next_char){
         terminal.childNodes[screen.cury].appendChild(charElem);
     }
 
-    terminal.childNodes[screen.cury].childNodes[screen.curx].innerText = next_char;
+    terminal.childNodes[screen.cury].childNodes[screen.curx].textContent = next_char;
     screen.style.curcolor = screen.style.color;
     screen.style.curbgcolor = screen.style.bgcolor;
 
@@ -466,13 +505,13 @@ function changeChar(next_char, x, y) {
     let curdiv = terminal.childNodes[y];
     for (let i = 0; i < curdiv.childNodes.length; i ++){
         //console.log(next_char);
-        ix += curdiv.childNodes[i].innerText.length;
+        ix += curdiv.childNodes[i].textContent.length;
 
         if (x < ix) {
             //Insert char
             let curnode = curdiv.childNodes[i];
-            let pos = x - (ix - curnode.innerText.length); 
-            //console.log(i + '  <==>  ' + pos + ' = ' + x + ' - (' + ix + ' - ' + curnode.innerText.length + ')');
+            let pos = x - (ix - curnode.textContent.length); 
+            //console.log(i + '  <==>  ' + pos + ' = ' + x + ' - (' + ix + ' - ' + curnode.textContent.length + ')');
             let text = curnode.textContent;
                                    console.log('A'); 
             if(curnode.style.color == screen.style.color &&
@@ -598,7 +637,7 @@ function changeChar(next_char, x, y) {
         if(curdiv.lastElementChild &&
            defaultStyle.color   == curdiv.lastElementChild.style.color &&
            defaultStyle.bgcolor == curdiv.lastElementChild.style.backgroundColor) {
-            curdiv.lastElementChild.innerText += '\xA0'.repeat(inc);
+            curdiv.lastElementChild.textContent += '\xA0'.repeat(inc);
             return;
         }
 
@@ -613,7 +652,7 @@ function changeChar(next_char, x, y) {
     if(curdiv.lastElementChild &&
        screen.style.color   == curdiv.lastElementChild.style.color &&
        screen.style.bgcolor == curdiv.lastElementChild.style.backgroundColor) {
-        curdiv.lastElementChild.innerText += next_char;
+        curdiv.lastElementChild.textContent += next_char;
         return;
     }
 
