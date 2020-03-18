@@ -167,36 +167,68 @@ function handleCSI() {
             break;
         case 'K': //Erase in Line
             if(buf[0] == 0 || buf[0] == 2){
-                /*let curdiv = terminal.childNodes[screen.cury];
+                let curdiv = terminal.childNodes[screen.cury];
                 let x = screen.curx;
+                let ix = 0;
 
-                for (let i = 0; i < curdiv.childNodes.length; i ++){
+                for (let i = 0; i < curdiv.childNodes.length; i ++) {
                     ix += curdiv.childNodes[i].innerText.length;
              
                     if (x < ix) {
-                        //Insert char
                         let curnode = curdiv.childNodes[i];
                         let pos = x - (ix - curnode.innerText.length); 
-                        //console.log(i + '  <==>  ' + pos + ' = ' + x + ' - (' + ix + ' - ' + curnode.innerText.length + ')');
                         let text = curnode.textContent;
 
+                        while (curnode.nextSibling) 
+                            curdiv.removeChild(curnode.nextSibling);
+
+                        curnode.textContent = curnode.textContent.slice(0, pos);
+
+                        let strsize = twidth - curdiv.textContent.length;
+
+                        let spaceElem = document.createElement('span');
+                        spaceElem.appendChild(document.createTextNode('\xA0'.repeat(strsize)));
+                        spaceElem.style.color = screen.style.color;
+                        spaceElem.style.backgroundColor = screen.style.bgcolor;
                         
+                        curdiv.appendChild(spaceElem);
                         break;
                     }
                 }
-                
-                curdiv.childNodes[screen.curx].innerText = '\xA0';
-                while(curdiv.childNodes[screen.curx] != curdiv.lastElementChild){
-                    curdiv.removeChild(curdiv.lastElementChild);
-                }*/
             }
 
             if(buf[0] == 1 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
-                for(let inode = 0; inode <= screen.curx && inode < curdiv.childNodes.length; inode ++){
-                    curdiv.childNodes[inode].innerText = '\xA0';
+                let x = screen.curx;
+                let ix = 0;
+
+                for (let i = 0; i < curdiv.childNodes.length; i ++) {
+                    ix += curdiv.childNodes[i].innerText.length;
+             
+                    if (x < ix) {
+                        let curnode = curdiv.childNodes[i];
+                        let pos = x - (ix - curnode.innerText.length); 
+                        let text = curnode.textContent;
+
+                        while (curnode.previousSibling) 
+                            curdiv.removeChild(curnode.previousSibling);
+
+                        curnode.textContent = curnode.textContent.slice(pos + 1);
+
+                        let strsize = twidth - curdiv.textContent.length;
+
+                        let spaceElem = document.createElement('span');
+                        spaceElem.appendChild(document.createTextNode('\xA0'.repeat(strsize)));
+                        spaceElem.style.color = screen.style.color;
+                        spaceElem.style.backgroundColor = screen.style.bgcolor;
+                        
+                        curdiv.insertBefore(spaceElem, curnode);
+                        break;
+                    }
                 }
             }
+
+            mergeSameStyle(screen.cury);
             break;
         case 'P':
             let curdiv = terminal.childNodes[screen.cury];
@@ -420,7 +452,8 @@ function printChar(next_char){
     changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
     screen.curx ++;
 */
-    changeChar(next_char, screen.curx, screen.cury); changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
+    changeChar(next_char, screen.curx, screen.cury); 
+    changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
     screen.curx ++;
 }
 
@@ -563,8 +596,8 @@ function changeChar(next_char, x, y) {
         let inc = x - ix - 1;
 
         if(curdiv.lastElementChild &&
-           defaultStyle.style.color   == curdiv.lastElementChild.style.color &&
-           defaultStyle.style.bgcolor == curdiv.lastElementChild.style.backgroundColor) {
+           defaultStyle.color   == curdiv.lastElementChild.style.color &&
+           defaultStyle.bgcolor == curdiv.lastElementChild.style.backgroundColor) {
             curdiv.lastElementChild.innerText += '\xA0'.repeat(inc);
             return;
         }
