@@ -16,6 +16,8 @@ screen = new Screen();
 altscreen = new Screen();
 
 var alternate_screen = '';
+var twidth  = 50;
+var theight = 50;
 var terminal;
 init();
 
@@ -149,27 +151,46 @@ function handleCSI() {
                 for (let inode = 0; inode < terminal.childNodes[screen.cury].childNodes.length; inode++) {
                     terminal.childNodes[screen.cury].childNodes[inode].innerText = '\xA0';
                 }
+
                 for (let inode = 0; inode < terminal.childNodes.length; inode++) {
                     while (terminal.childNodes[inode].hasChildNodes()) {
                         terminal.childNodes[inode].removeChild(terminal.childNodes[inode].firstChild);
                     }
+
                     let charElem = document.createElement('span');
                     charElem.appendChild(document.createTextNode('\xA0'));
                     charElem.style.color = defaultStyle.color;
                     charElem.style.backgroundColor = defaultStyle.bgcolor;
                     terminal.childNodes[inode].append(charElem);
-                    
                 }
             }
             break;
         case 'K': //Erase in Line
             if(buf[0] == 0 || buf[0] == 2){
-                let curdiv = terminal.childNodes[screen.cury];
+                /*let curdiv = terminal.childNodes[screen.cury];
+                let x = screen.curx;
+
+                for (let i = 0; i < curdiv.childNodes.length; i ++){
+                    ix += curdiv.childNodes[i].innerText.length;
+             
+                    if (x < ix) {
+                        //Insert char
+                        let curnode = curdiv.childNodes[i];
+                        let pos = x - (ix - curnode.innerText.length); 
+                        //console.log(i + '  <==>  ' + pos + ' = ' + x + ' - (' + ix + ' - ' + curnode.innerText.length + ')');
+                        let text = curnode.textContent;
+
+                        
+                        break;
+                    }
+                }
+                
                 curdiv.childNodes[screen.curx].innerText = '\xA0';
                 while(curdiv.childNodes[screen.curx] != curdiv.lastElementChild){
                     curdiv.removeChild(curdiv.lastElementChild);
-                }
+                }*/
             }
+
             if(buf[0] == 1 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
                 for(let inode = 0; inode <= screen.curx && inode < curdiv.childNodes.length; inode ++){
@@ -399,8 +420,7 @@ function printChar(next_char){
     changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
     screen.curx ++;
 */
-    changeChar(next_char, screen.curx, screen.cury);
-    changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
+    changeChar(next_char, screen.curx, screen.cury); changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
     screen.curx ++;
 }
 
@@ -421,7 +441,7 @@ function changeChar(next_char, x, y) {
             let pos = x - (ix - curnode.innerText.length); 
             //console.log(i + '  <==>  ' + pos + ' = ' + x + ' - (' + ix + ' - ' + curnode.innerText.length + ')');
             let text = curnode.textContent;
-            
+                                   console.log('A'); 
             if(curnode.style.color == screen.style.color &&
                curnode.style.backgroundColor == screen.style.bgcolor) {
                 curnode.textContent = text.slice(0, pos) + next_char + text.slice(pos + 1);
@@ -429,16 +449,17 @@ function changeChar(next_char, x, y) {
             }
 
             if(curnode.textContent.length == 1){
+                                   console.log('B'); 
                 let prevnode = curnode.previousSibling;
                 let nextnode = curnode.nextSibling;
 
-                if(prevnode && 
-                   screen.style.color   == prevnode.style.color &&
-                   screen.style.bgcolor == prevnode.style.backgroundColor
+                if (prevnode && 
+                    screen.style.color   == prevnode.style.color &&
+                    screen.style.bgcolor == prevnode.style.backgroundColor
                 ) {
-                    if(nextnode && 
-                       screen.style.color   == nextnode.style.color &&
-                       screen.style.bgcolor == nextnode.style.backgroundColor
+                    if (nextnode && 
+                        screen.style.color   == nextnode.style.color &&
+                        screen.style.bgcolor == nextnode.style.backgroundColor
                     ) {
                         //Merging current node with previous and next
                         prevnode.textContent += next_char;
@@ -454,9 +475,9 @@ function changeChar(next_char, x, y) {
                     return;
                 }
 
-                if(nextnode && 
-                   screen.style.color   == nextnode.style.color &&
-                   screen.style.bgcolor == nextnode.style.backgroundColor
+                if (nextnode && 
+                    screen.style.color   == nextnode.style.color &&
+                    screen.style.bgcolor == nextnode.style.backgroundColor
                 ) {
                     //Merging current node with next
                     nextnode.textContent = next_char + nextnode.textContent;
@@ -470,10 +491,11 @@ function changeChar(next_char, x, y) {
                 return;
             }
 
-            if(pos == 0) {
-                if(i && 
-                   screen.style.color   == curdiv.childNodes[i - 1].style.color &&
-                   screen.style.bgcolor == curdiv.childNodes[i - 1].style.backgroundColor
+            if (pos == 0) {
+                                   console.log('C'); 
+                if (i && 
+                    screen.style.color   == curdiv.childNodes[i - 1].style.color &&
+                    screen.style.bgcolor == curdiv.childNodes[i - 1].style.backgroundColor
                 ) {
                     curnode.textContent = curnode.textContent.slice(1);
                     curdiv.childNodes[i - 1].textContent += next_char;
@@ -491,10 +513,11 @@ function changeChar(next_char, x, y) {
                 return;
             }
 
-            if(pos == curnode.textContent.length - 1) {
-                if(i != curdiv.childNodes.length - 1 && 
-                   screen.style.color   == curdiv.childNodes[i + 1].style.color &&
-                   screen.style.bgcolor == curdiv.childNodes[i + 1].style.backgroundColor
+            if (pos == curnode.textContent.length - 1) {
+                                   console.log('D'); 
+                if (i != curdiv.childNodes.length - 1 && 
+                    screen.style.color   == curdiv.childNodes[i + 1].style.color &&
+                    screen.style.bgcolor == curdiv.childNodes[i + 1].style.backgroundColor
                 ) {
                     curnode.textContent = curnode.textContent.slice(0, -1);
                     curdiv.childNodes[i + 1].textContent = next_char + curdiv.childNodes[i + 1].textContent;
@@ -512,6 +535,7 @@ function changeChar(next_char, x, y) {
                 return;
             }
 
+                                   console.log('E'); 
 
             let charElem = document.createElement('span');
             charElem.appendChild(document.createTextNode(curnode.textContent.slice(0, pos)));
@@ -569,6 +593,55 @@ function changeChar(next_char, x, y) {
     curdiv.appendChild(charElem);
 }
 
+function mergeSameStyle(y){
+    //Merge span with same style
+    if (terminal.childNodes.length <= y)
+        return;
+
+    let curdiv = terminal.childNodes[y];
+    if (curdiv.childNodes.length == 0)
+        return;
+
+    let lastStyle = new Style();
+    while (!curdiv.firstElementChild.textContent)
+        curdiv.removeChild(curdiv.firstElementChild);
+    
+    if (curdiv.childNodes.length < 2)
+        return;
+
+    let nextNode = curdiv.firstElementChild;
+    lastStyle.color = nextNode.style.color;
+    lastStyle.bgcolor = nextNode.style.backgroundColor;
+
+    do {
+        nextNode = nextNode.nextSibling;
+
+        while (!nextNode.textContent) {
+            if (curdiv.lastElementChild == nextNode) {
+                curdiv.removeChild(nextNode);
+                return;
+            }
+
+            nextNode = nextNode.nextSibling;
+            curdiv.removeChild(nextNode.previousSibling);
+        }
+        
+        if (
+            lastStyle.color   == nextNode.style.color &&
+            lastStyle.bgcolor == nextNode.style.backgroundColor
+        ) {
+            //Merging with previous
+            nextNode = nextNode.previousSibling;
+            nextNode.textContent += nextNode.nextSibling.textContent;
+            curdiv.removeChild(nextNode.nextSibling);
+        } else {
+            lastStyle.color   = nextNode.style.color;
+            lastStyle.bgcolor = nextNode.style.backgroundColor;
+        }
+
+    } while (nextNode != curdiv.lastElementChild);
+}
+
 (function() {
     window.addEventListener("resize", resizeThrottler, false);
 
@@ -599,5 +672,9 @@ function setNewSize(){
     
     let encoder = new TextEncoder();
     let uint8Array = encoder.encode('\x1b[8;' + charHeight + ';' + charWidth + 't');
+
+    twidth  = charWidth;
+    theight = charHeight;
+
     ws.send(uint8Array);
 }
