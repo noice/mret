@@ -64,6 +64,8 @@ function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
     newcur.style.color = defaultStyle.curcolor;
     newcur.style.backgroundColor = defaultStyle.curbgcolor;
     */
+    turnOffCur(prevcurx, prevcury);
+    
     while (terminal.childNodes.length <= newcury){
         terminal.appendChild(document.createElement('div'));
     }
@@ -76,6 +78,44 @@ function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
         charElem.style.backgroundColor = defaultStyle.bgcolor;
         
         terminal.childNodes[newcury].appendChild(charElem);
+    }
+
+    turnOnCur(newcurx, newcury);
+}
+
+function turnOffCur(x, y) {
+    if (terminal.childNodes.length <= y) {
+        return;
+    }
+
+    let curdiv = terminal.childNodes[y];
+    let ix = 0;
+
+    for (let i = 0; i < curdiv.childNodes.length; i ++) {
+        ix += curdiv.childNodes[i].textContent.length;
+    
+        if (x < ix) {
+            let curnode = curdiv.childNodes[i];
+            curnode.textContent = curnode.textContent;
+        }
+    }
+}
+
+function turnOnCur(x, y){
+    let curdiv = terminal.childNodes[y];
+    let ix = 0;
+
+    for (let i = 0; i < curdiv.childNodes.length; i ++) {
+        ix += curdiv.childNodes[i].textContent.length;
+    
+        if (x < ix) {
+            let curnode = curdiv.childNodes[i];
+            let pos = x - (ix - curnode.textContent.length); 
+            
+            let text = curnode.textContent;
+            let curHTML = '<span class="cursor">' + text[pos] + '</span>';
+            curnode.innerHTML = text.split(0, pos) + curHTML + text.split(pos + 1);
+        }
     }
 }
 

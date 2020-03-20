@@ -7,3 +7,8 @@ body{
     font-family:      monospace;
     font-size:        11pt;
 }
+
+.cursor {
+    color:            black;
+    background-color: white;
+}
