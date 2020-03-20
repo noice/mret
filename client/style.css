@@ -1,5 +1,10 @@
-body{
+body {
     background-color: black;
+    margin:           0;
+}
+
+pre {
+    margin:           0;
 }
 
 .terminal {

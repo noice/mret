@@ -166,6 +166,8 @@ function handleCSI() {
         case 'J': //Erase Data
             if(buf[0] == 0 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
+                if (!curdiv)
+                    break;
 
                 while(curdiv != terminal.lastElementChild){
                     terminal.removeChild(terminal.lastElementChild);
@@ -185,6 +187,8 @@ function handleCSI() {
 
             if(buf[0] == 1 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
+                if (!curdiv)
+                    break;
 
                 while(curdiv != terminal.firstElementChild){
                     terminal.removeChild(terminal.firstElementChild);
@@ -207,6 +211,8 @@ function handleCSI() {
         case 'K': //Erase in Line
             if(buf[0] == 0 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
+                if (!curdiv)
+                    break;
                 let x = screen.curx;
                 let ix = 0;
 
@@ -238,6 +244,8 @@ function handleCSI() {
 
             if(buf[0] == 1 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
+                if (!curdiv)
+                    break;
                 let x = screen.curx;
                 let ix = 0;
 
@@ -327,7 +335,7 @@ function handleCSI() {
             screen.curx = screen.saved_curx;
             screen.cury = screen.saved_cury;
             break;
-        case '?h':
+        case '?h': // DEC Private Mode Set
             if (buf[0] == 25) {
                 screen.cur_visible = 1;
                 changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
@@ -339,7 +347,7 @@ function handleCSI() {
                 changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
             }
             break;
-        case '?l':
+        case '?l': // DEC Private Mode Reset
             if (buf[0] == 25) {
                 screen.cur_visible = 0;
                 changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
