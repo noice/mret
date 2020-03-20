@@ -36,22 +36,23 @@ function init() {
 
 function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
     turnOffCur(prevcurx, prevcury);
-    
-    while (terminal.childNodes.length <= newcury){
-        terminal.appendChild(document.createElement('div'));
+    if(screen.cur_visible){
+        while (terminal.childNodes.length <= newcury){
+            terminal.appendChild(document.createElement('div'));
+        }
+ 
+        let contentsize = terminal.childNodes[newcury].textContent.length;
+        if (contentsize <= newcurx){
+            let charElem = document.createElement('span');
+            charElem.appendChild(document.createTextNode('\xA0'.repeat(newcurx + 1 - contentsize)));
+            charElem.style.color = defaultStyle.color;
+            charElem.style.backgroundColor = defaultStyle.bgcolor;
+            
+            terminal.childNodes[newcury].appendChild(charElem);
+        }
+ 
+        turnOnCur(newcurx, newcury);
     }
-
-    let contentsize = terminal.childNodes[newcury].textContent.length;
-    if (contentsize <= newcurx){
-        let charElem = document.createElement('span');
-        charElem.appendChild(document.createTextNode('\xA0'.repeat(newcurx + 1 - contentsize)));
-        charElem.style.color = defaultStyle.color;
-        charElem.style.backgroundColor = defaultStyle.bgcolor;
-        
-        terminal.childNodes[newcury].appendChild(charElem);
-    }
-
-    turnOnCur(newcurx, newcury);
 }
 
 function turnOffCur(x, y) {
@@ -327,7 +328,11 @@ function handleCSI() {
             screen.cury = screen.saved_cury;
             break;
         case '?h':
-            if(buf[0] == 1049){
+            if (buf[0] == 25) {
+                screen.cur_visible = 1;
+                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+            } 
+            else if (buf[0] == 1049) {
                 [screen, altscreen] = [altscreen, screen];
 
                 [terminal.innerHTML, alternate_screen] = [alternate_screen, terminal.innerHTML];
@@ -335,7 +340,10 @@ function handleCSI() {
             }
             break;
         case '?l':
-            if(buf[0] == 1049 && screen.curx != -1){
+            if (buf[0] == 25) {
+                screen.cur_visible = 0;
+                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+            } else if (buf[0] == 1049 && screen.curx != -1) {
                 [screen, altscreen] = [altscreen, screen];
 
                 [terminal.innerHTML, alternate_screen] = [alternate_screen, terminal.innerHTML];
@@ -479,33 +487,13 @@ function nextChar(next_char) {
             break;
     }
 
-    window.scrollTo(0, 0);
+    window.scrollTo(0, document.body.scrollHeight - document.body.clientHeight);
 }
 
 
 function printChar(next_char){
-/*
-    while (terminal.childNodes.length <= screen.cury){
-        terminal.appendChild(document.createElement('div'));
-    }
-  
-    while (terminal.childNodes[screen.cury].childNodes.length <= screen.curx){
-        let charElem = document.createElement('span');
-        charElem.appendChild(document.createTextNode('\xA0'));
-        charElem.style.color = defaultStyle.color;
-        charElem.style.backgroundColor = defaultStyle.bgcolor;
-        
-        terminal.childNodes[screen.cury].appendChild(charElem);
-    }
-
-    terminal.childNodes[screen.cury].childNodes[screen.curx].textContent = next_char;
-    screen.style.curcolor = screen.style.color;
-    screen.style.curbgcolor = screen.style.bgcolor;
-
-    changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
-    screen.curx ++;
-*/
     changeChar(next_char, screen.curx, screen.cury); 
+
     if (screen.curx < twidth - 1){
         changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
         screen.curx ++;    
