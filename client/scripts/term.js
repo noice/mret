@@ -35,35 +35,6 @@ function init() {
 }
 
 function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
-    /*if (terminal.childNodes.length > prevcury && 
-        terminal.childNodes[prevcury]         &&
-        terminal.childNodes[prevcury].childNodes.length > prevcurx) {
-        
-        prevcur = terminal.childNodes[prevcury].childNodes[prevcurx];
-        prevcur.style.color = screen.style.curcolor;
-        prevcur.style.backgroundColor = screen.style.curbgcolor;
-    }
-
-    while (terminal.childNodes.length <= newcury){
-        terminal.appendChild(document.createElement('div'));
-    }
-
-    while (terminal.childNodes[newcury].childNodes.length <= newcurx){
-        let charElem = document.createElement('span');
-        charElem.appendChild(document.createTextNode('\xA0'));
-        charElem.style.color = defaultStyle.color;
-        charElem.style.backgroundColor = defaultStyle.bgcolor;
-        
-        terminal.childNodes[newcury].appendChild(charElem);
-    }
-
-    newcur = terminal.childNodes[newcury].childNodes[newcurx];
-    screen.style.curcolor = newcur.style.color;
-    screen.style.curbgcolor = newcur.style.backgroundColor;
-
-    newcur.style.color = defaultStyle.curcolor;
-    newcur.style.backgroundColor = defaultStyle.curbgcolor;
-    */
     turnOffCur(prevcurx, prevcury);
     
     while (terminal.childNodes.length <= newcury){
@@ -97,6 +68,7 @@ function turnOffCur(x, y) {
         if (x < ix) {
             let curnode = curdiv.childNodes[i];
             curnode.textContent = curnode.textContent;
+            return;
         }
     }
 }
@@ -114,7 +86,8 @@ function turnOnCur(x, y){
             
             let text = curnode.textContent;
             let curHTML = '<span class="cursor">' + text[pos] + '</span>';
-            curnode.innerHTML = text.split(0, pos) + curHTML + text.split(pos + 1);
+            curnode.innerHTML = text.slice(0, pos) + curHTML + text.slice(pos + 1);
+            return;
         }
     }
 }
@@ -294,6 +267,7 @@ function handleCSI() {
             }
 
             mergeSameStyle(screen.cury);
+            changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
             break;
         case 'P':
             let curdiv = terminal.childNodes[screen.cury];
@@ -494,7 +468,7 @@ function nextChar(next_char) {
             break;
 
         case '\x08': //Backspace
-            if(screen.curx > 0){
+            if (screen.curx > 0) {
                 changeCurPos(screen.curx, screen.cury, screen.curx - 1, screen.cury);
                 screen.curx --;
             }
@@ -532,8 +506,14 @@ function printChar(next_char){
     screen.curx ++;
 */
     changeChar(next_char, screen.curx, screen.cury); 
-    changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
-    screen.curx ++;
+    if (screen.curx < twidth - 1){
+        changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
+        screen.curx ++;    
+    } else {
+        changeCurPos(screen.curx, screen.cury, 0, screen.cury + 1);
+        screen.cury ++;    
+        screen.curx = 0;
+    }
 }
 
 function changeChar(next_char, x, y) {
@@ -553,7 +533,7 @@ function changeChar(next_char, x, y) {
             let pos = x - (ix - curnode.textContent.length); 
             //console.log(i + '  <==>  ' + pos + ' = ' + x + ' - (' + ix + ' - ' + curnode.textContent.length + ')');
             let text = curnode.textContent;
-                                   console.log('A'); 
+            //                       console.log('A'); 
             if(curnode.style.color == screen.style.color &&
                curnode.style.backgroundColor == screen.style.bgcolor) {
                 curnode.textContent = text.slice(0, pos) + next_char + text.slice(pos + 1);
@@ -561,7 +541,7 @@ function changeChar(next_char, x, y) {
             }
 
             if(curnode.textContent.length == 1){
-                                   console.log('B'); 
+            //                       console.log('B'); 
                 let prevnode = curnode.previousSibling;
                 let nextnode = curnode.nextSibling;
 
@@ -604,7 +584,7 @@ function changeChar(next_char, x, y) {
             }
 
             if (pos == 0) {
-                                   console.log('C'); 
+            //                       console.log('C'); 
                 if (i && 
                     screen.style.color   == curdiv.childNodes[i - 1].style.color &&
                     screen.style.bgcolor == curdiv.childNodes[i - 1].style.backgroundColor
@@ -626,7 +606,7 @@ function changeChar(next_char, x, y) {
             }
 
             if (pos == curnode.textContent.length - 1) {
-                                   console.log('D'); 
+            //                       console.log('D'); 
                 if (i != curdiv.childNodes.length - 1 && 
                     screen.style.color   == curdiv.childNodes[i + 1].style.color &&
                     screen.style.bgcolor == curdiv.childNodes[i + 1].style.backgroundColor
@@ -647,7 +627,7 @@ function changeChar(next_char, x, y) {
                 return;
             }
 
-                                   console.log('E'); 
+            //                       console.log('E'); 
 
             let charElem = document.createElement('span');
             charElem.appendChild(document.createTextNode(curnode.textContent.slice(0, pos)));
@@ -775,9 +755,19 @@ function mergeSameStyle(y){
 function setNewSize(){
     let width  = document.body.clientWidth - terminal.offsetLeft;
     let height = document.body.clientHeight- terminal.offsetTop;
+    
+    //Append virtual element to check size of one char
+    let charElem = document.createElement('span');
+    charElem.appendChild(document.createTextNode(' '));
+    charElem.style.color = defaultStyle.color;
+    charElem.style.backgroundColor = defaultStyle.bgcolor;
 
-    let elementWidth  = terminal.firstElementChild.firstElementChild.offsetWidth;
-    let elementHeight = terminal.firstElementChild.firstElementChild.offsetHeight;
+    terminal.appendChild(charElem);
+    let elementSize   = terminal.lastElementChild.getBoundingClientRect();
+    terminal.removeChild(terminal.lastElementChild);
+
+    let elementWidth  = elementSize.width;
+    let elementHeight = elementSize.height;
 
     let charWidth  = Math.floor(width  / elementWidth );
     let charHeight = Math.floor(height / elementHeight);
