@@ -10,7 +10,8 @@ function handle(e) {
             (e.repeat ? ' (repeat)' : '') +
             "\n";
     */
-    e.preventDefault();
+    if (e.key != "F12" && e.key != "F5")
+        e.preventDefault();
 
     if(e.type == "keydown"){
         if(e.key.length == 1){
@@ -77,7 +78,7 @@ function handle(e) {
                 ws.send("\x1BOS");
                 break;
             case "F5":
-                ws.send("\x1B[15~");
+                //ws.send("\x1B[15~");
                 break;
             case "F6":
                 ws.send("\x1B[17~");
@@ -98,7 +99,7 @@ function handle(e) {
                 ws.send("\x1B[23~");
                 break;
             case "F12":
-                ws.send("\x1B[24~");
+                //ws.send("\x1B[24~");
                 break;
             default:
                 break;

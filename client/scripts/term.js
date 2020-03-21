@@ -320,6 +320,15 @@ function handleCSI() {
                 changeCurPos(screen.curx, screen.cury + 1, screen.curx, screen.cury);
             }
             break;
+        case 'X': //Erase Character(s)
+            if (buf[0] == 0)
+                buf[0] = 1;
+
+            for(let i = 0; i < buf[0]; i ++){
+                changeChar(' ', screen.curx + i, screen.cury);
+            }
+            changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+            break;
         case 'n': //Device Status Report
             if(buf[0] == 6){
                 ws.send('\x1B[' + (screen.cury + 1) + ';' + (screen.curx + 1)  + 'R');
