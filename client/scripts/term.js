@@ -530,13 +530,13 @@ function changeChar(next_char, x, y) {
             //console.log(i + '  <==>  ' + pos + ' = ' + x + ' - (' + ix + ' - ' + curnode.textContent.length + ')');
             let text = curnode.textContent;
             //                       console.log('A'); 
-            if(curnode.style.color == screen.style.color &&
-               curnode.style.backgroundColor == screen.style.bgcolor) {
+            if (curnode.style.color == screen.style.color &&
+                curnode.style.backgroundColor == screen.style.bgcolor) {
                 curnode.textContent = text.slice(0, pos) + next_char + text.slice(pos + 1);
                 return;
             }
 
-            if(curnode.textContent.length == 1){
+            if (curnode.textContent.length == 1) {
             //                       console.log('B'); 
                 let prevnode = curnode.previousSibling;
                 let nextnode = curnode.nextSibling;

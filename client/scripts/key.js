@@ -10,6 +10,8 @@ function handle(e) {
             (e.repeat ? ' (repeat)' : '') +
             "\n";
     */
+    e.preventDefault();
+
     if(e.type == "keydown"){
         if(e.key.length == 1){
             if(!e.ctrlKey){
@@ -27,25 +29,76 @@ function handle(e) {
                 ws.send("\x1B");
                 break;
             case "Backspace":
-                ws.send("\x08");
+                ws.send("\x7F");
                 break;
             case "Tab":
                 ws.send("\x09");
                 break;
+            case "Home":
+                ws.send("\x1B[1~");
+                break;
+            case "Insert":
+                ws.send("\x1B[2~");
+                break;
             case "Delete":
-                ws.send("\x7F");
+                ws.send("\x1B[3~");
+                break;
+            case "End":
+                ws.send("\x1B[4~");
+                break;
+            case "PageUp":
+                ws.send("\x1B[5~");
+                break;
+            case "PageDown":
+                ws.send("\x1B[6~");
                 break;
             case "ArrowLeft":
-                ws.send("\x1B[D");
+                ws.send("\x1BOD");
                 break;
             case "ArrowUp":
-                ws.send("\x1B[A");
+                ws.send("\x1BOA");
                 break;
             case "ArrowRight":
-                ws.send("\x1B[C");
+                ws.send("\x1BOC");
                 break;
             case "ArrowDown":
-                ws.send("\x1B[B");
+                ws.send("\x1BOB");
+                break;
+            case "F1":
+                ws.send("\x1BOP");
+                break;
+            case "F2":
+                ws.send("\x1BOQ");
+                break;
+            case "F3":
+                ws.send("\x1BOR");
+                break;
+            case "F4":
+                ws.send("\x1BOS");
+                break;
+            case "F5":
+                ws.send("\x1B[15~");
+                break;
+            case "F6":
+                ws.send("\x1B[17~");
+                break;
+            case "F7":
+                ws.send("\x1B[18~");
+                break;
+            case "F8":
+                ws.send("\x1B[19~");
+                break;
+            case "F9":
+                ws.send("\x1B[20~");
+                break;
+            case "F10":
+                ws.send("\x1B[21~");
+                break;
+            case "F11":
+                ws.send("\x1B[23~");
+                break;
+            case "F12":
+                ws.send("\x1B[24~");
                 break;
             default:
                 break;
