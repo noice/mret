@@ -109,10 +109,15 @@ init_pty(PTY * pty, int connection_fd) {
     pty->act.sa_flags = 0;
 
     if (sigaction(SIGTERM, &pty->act, NULL) < 0) {
-        perror("ptypair: невозможно обработать SIGWTERM");
+        perror("ptypair: невозможно обработать SIGTERM");
         return 1;
     }
-
+    
+    if (sigaction(SIGCHLD, &pty->act, NULL) < 0) {
+        perror("ptypair: невозможно обработать SIGCHLD");
+        return 1;
+    }
+    
     tcgetattr(connection_fd, &pty->ot);
     pty->t = pty->ot;
     pty->t.c_lflag &= ~(ICANON | ISIG | ECHO | ECHOCTL | ECHOE |
@@ -251,6 +256,11 @@ pty_loop(PTY * pty, int connection_fd) {
         }
 
         if (propagate_sigterm) {
+            pty_close(pty, connection_fd);
+            propagate_sigterm = 0;
+        }
+        
+        if (propagate_sigchld) {
             pty_close(pty, connection_fd);
             propagate_sigterm = 0;
         }
