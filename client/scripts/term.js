@@ -388,7 +388,6 @@ function handleOSC(next_char) {
 function parseCSI(next_char) {
     //TODO
     if(CSI_priv.length && CSI_priv.slice(-1) != '?'){
-        console.log(CSI_priv + ' - ' + escape_sequence);
         escape_state = 0;
         return;
     }
@@ -399,6 +398,7 @@ function parseCSI(next_char) {
         CSI_priv = '?';
     } else if('@ABCDEFGHIJKLMPSTXZ^`abcdefghilmnpqrstuvwxyz{|}~'.indexOf(next_char) != -1) {
         CSI_priv += next_char;
+        //console.log(CSI_priv + ' - ' + escape_sequence);
         handleCSI();
     } else if(escape_sequence.length == 0 && next_char != '[') {
         if (';0123456789'.indexOf(next_char) == -1){
@@ -529,7 +529,6 @@ function changeChar(next_char, x, y) {
             let pos = x - (ix - curnode.textContent.length); 
             //console.log(i + '  <==>  ' + pos + ' = ' + x + ' - (' + ix + ' - ' + curnode.textContent.length + ')');
             let text = curnode.textContent;
-            //                       console.log('A'); 
             if (curnode.style.color == screen.style.color &&
                 curnode.style.backgroundColor == screen.style.bgcolor) {
                 curnode.textContent = text.slice(0, pos) + next_char + text.slice(pos + 1);
@@ -537,7 +536,6 @@ function changeChar(next_char, x, y) {
             }
 
             if (curnode.textContent.length == 1) {
-            //                       console.log('B'); 
                 let prevnode = curnode.previousSibling;
                 let nextnode = curnode.nextSibling;
 
@@ -580,7 +578,6 @@ function changeChar(next_char, x, y) {
             }
 
             if (pos == 0) {
-            //                       console.log('C'); 
                 if (i && 
                     screen.style.color   == curdiv.childNodes[i - 1].style.color &&
                     screen.style.bgcolor == curdiv.childNodes[i - 1].style.backgroundColor
@@ -602,7 +599,6 @@ function changeChar(next_char, x, y) {
             }
 
             if (pos == curnode.textContent.length - 1) {
-            //                       console.log('D'); 
                 if (i != curdiv.childNodes.length - 1 && 
                     screen.style.color   == curdiv.childNodes[i + 1].style.color &&
                     screen.style.bgcolor == curdiv.childNodes[i + 1].style.backgroundColor
@@ -623,7 +619,6 @@ function changeChar(next_char, x, y) {
                 return;
             }
 
-            //                       console.log('E'); 
 
             let charElem = document.createElement('span');
             charElem.appendChild(document.createTextNode(curnode.textContent.slice(0, pos)));
@@ -644,6 +639,7 @@ function changeChar(next_char, x, y) {
 
 
             curnode.textContent = curnode.textContent.slice(pos + 1);
+            return;
         }
     }
 

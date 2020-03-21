@@ -16,6 +16,7 @@ ws.onmessage = function(data) {
 function new_data(){
     while(data_queue.length){
         let newest_msg = data_queue.shift();
+        console.log(newest_msg)
         for(let next_char of newest_msg){
             nextChar(next_char);
         }

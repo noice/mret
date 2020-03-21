@@ -1,7 +1,38 @@
-var dcolor = 'white';
-var dbgcolor = 'black';
-var dcurcolor = 'black';
-var dcurbgcolor = 'white';
+const colormap = {
+    0: 'rgb(0,0,0)',
+    1: 'rgb(170,0,0)',
+    2: 'rgb(0,170,0)',
+    3: 'rgb(170,85,0)',
+    4: 'rgb(0,0,170)',
+    5: 'rgb(170,0,170)',
+    6: 'rgb(0,170,170)',
+    7: 'rgb(170,170,170)'
+};
+
+const brcolormap = {
+    0: 'rgb(85,85,85)',
+    1: 'rgb(255,85,85)',
+    2: 'rgb(85,255,85)',
+    3: 'rgb(255,255,85)',
+    4: 'rgb(85,85,255)',
+    5: 'rgb(255,85,255)',
+    6: 'rgb(85,255,255)',
+    7: 'rgb(255,255,255)'
+};
+
+const col8bitmap = {
+    0: '0',
+    1: '95',
+    2: '135',
+    3: '175',
+    4: '215',
+    5: '255'
+};
+
+var dcolor = brcolormap[7];
+var dbgcolor = colormap[0];
+var dcurcolor = colormap[0];
+var dcurbgcolor = brcolormap[7];
 
 function Style () {
     this.color = dcolor;
@@ -12,38 +43,6 @@ function Style () {
 }
 
 var defaultStyle = new Style();
-
-
-const colormap = {
-    0: 'black',
-    1: 'maroon',
-    2: 'green',
-    3: 'olive',
-    4: 'blue',
-    5: 'purple',
-    6: 'teal',
-    7: 'silver'
-};
-
-const brcolormap = {
-    0: 'gray',
-    1: 'red',
-    2: 'lime',
-    3: 'yellow',
-    4: 'cornflowerblue',
-    5: 'magenta',
-    6: 'cyan',
-    7: 'white'
-};
-
-const col8bitmap = {
-    0: '00',
-    1: '5F',
-    2: '87',
-    3: 'AF',
-    4: 'D7',
-    5: 'FF'
-};
 
 function getColor(buf, i){
     if(buf[i + 1] == 5){
@@ -60,7 +59,7 @@ function getColor(buf, i){
             gcol = parseInt(gcol / 6);
             let greencolor = col8bitmap[gcol];
 
-            return '#' + redcolor + greencolor + bluecolor;
+            return 'rgb(' + redcolor + ',' + greencolor + ',' + bluecolor + ')';
         } else {
             let t = 8;
             t += (col - 232) * 10;
