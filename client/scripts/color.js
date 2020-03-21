@@ -40,7 +40,7 @@ function Style () {
     this.curcolor = dcolor;
     this.curbgcolor = dbgcolor;
     this.brightness = 0;
-    this.reverse =0;
+    this.reverse = 0;
 }
 
 var defaultStyle = new Style();

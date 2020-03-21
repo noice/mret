@@ -504,7 +504,7 @@ function nextChar(next_char) {
             break;
     }
 
-    window.scrollTo(0, document.body.scrollHeight - document.body.clientHeight);
+    window.scrollTo(0, document.body.scrollHeight - innerHeight);
 }
 
 
@@ -754,8 +754,8 @@ function mergeSameStyle(y){
 }());
 
 function setNewSize(){
-    let width  = document.body.clientWidth - terminal.offsetLeft;
-    let height = document.body.clientHeight- terminal.offsetTop;
+    let termWidth  = innerWidth;
+    let termHeight = innerHeight;
     
     //Append virtual element to check size of one char
     let charElem = document.createElement('span');
@@ -770,14 +770,17 @@ function setNewSize(){
     let elementWidth  = elementSize.width;
     let elementHeight = elementSize.height;
 
-    let charWidth  = Math.floor(width  / elementWidth );
-    let charHeight = Math.floor(height / elementHeight);
+    let charWidth  = Math.floor(termWidth  / elementWidth );
+    let charHeight = Math.floor(termHeight / elementHeight);
     
     let encoder = new TextEncoder();
     let uint8Array = encoder.encode('\x1b[8;' + charHeight + ';' + charWidth + 't');
 
     twidth  = charWidth;
     theight = charHeight;
+    console.log(termWidth + ' - ' + termHeight);
+    console.log(elementWidth + ' - ' + elementHeight);
+    console.log(twidth + ' - ' + theight);
 
     ws.send(uint8Array);
 }
