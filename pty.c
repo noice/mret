@@ -44,8 +44,6 @@ int ws_ping(int connection_fd);
 int ws_pong(int connection_fd);
 int is_http_request(char * buf, uint len);
 
-
-
 int
 new_pty(char * cmd, int connection_fd) {
     // Start new pty

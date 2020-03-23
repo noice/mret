@@ -246,7 +246,7 @@ ws_close(int connection_fd) {
         perror("Error while closing WebSocket");
         return -1;
     }
-    printf("Connection socket is closed\n");
+    printf("Connection is closed\n");
 
     return 0;
 }
