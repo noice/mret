@@ -329,6 +329,25 @@ function handleCSI() {
             }
             changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
             break;
+        case 'd': //Line Position Absolute
+            if (buf[0])
+                buf[0] -= 1;
+
+            changeCurPos(screen.curx, screen.cury, screen.curx, buf[0]);
+            screen.cury = buf[0];
+            break;
+        case 'e': //Line Position Relative
+            if (!buf[0])
+                buf[0] = 1;
+
+            if(screen.cury + buf[0] >= 0){
+                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury + buf[0]);
+                screen.cury += buf[0];
+            } else {
+                changeCurPos(screen.curx, screen.cury, screen.curx, 0);
+                screen.cury = 0;
+            }
+            break;
         case 'n': //Device Status Report
             if(buf[0] == 6){
                 ws.send('\x1B[' + (screen.cury + 1) + ';' + (screen.curx + 1)  + 'R');
@@ -410,12 +429,12 @@ function parseCSI(next_char) {
         //console.log(CSI_priv + ' - ' + escape_sequence);
         handleCSI();
     } else if(escape_sequence.length == 0 && next_char != '[') {
-        if (';0123456789'.indexOf(next_char) == -1){
+        if ('-;0123456789'.indexOf(next_char) == -1){
             escape_state = 0;
         }
         escape_sequence += next_char;
     } else if(escape_sequence.length){
-        if (';0123456789'.indexOf(next_char) == -1){
+        if ('-;0123456789'.indexOf(next_char) == -1){
             escape_state = 0;
         }
         escape_sequence += next_char;

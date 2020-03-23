@@ -93,10 +93,7 @@ function handleCGR(buf) {
                 screen.style.color = defaultStyle.color;
                 screen.style.bgcolor = defaultStyle.bgcolor;
                 screen.style.brightness = 0;
-                if (screen.style.reverse){
-                    screen.style.reverse = 0;
-                    [screen.style.color, screen.style.bgcolor] = [screen.style.bgcolor, screen.style.color];
-                }
+                screen.style.reverse = 0;
                 break;
             case 1:
                 screen.style.brightness = 1;
@@ -104,6 +101,9 @@ function handleCGR(buf) {
             case 7:  //Reverse video
                 if (!screen.style.reverse){
                     screen.style.reverse = 1;
+                    [screen.style.color, screen.style.bgcolor] = [screen.style.bgcolor, screen.style.color];
+                } else {
+                    screen.style.reverse = 0;
                     [screen.style.color, screen.style.bgcolor] = [screen.style.bgcolor, screen.style.color];
                 }
                 break;
