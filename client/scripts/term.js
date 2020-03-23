@@ -462,7 +462,11 @@ function handleEscape(next_char){
             break;
 
         default:
-            escape_state = 0;
+            if(escape_sequence.length == 1){
+                escape_state = 0;
+            } else {
+                escape_sequence += next_char;
+            }
             break;
     }
 }
@@ -754,7 +758,7 @@ function mergeSameStyle(y){
 }());
 
 function setNewSize(){
-    let termWidth  = innerWidth;
+    let termWidth  = innerWidth - 10;
     let termHeight = innerHeight;
     
     //Append virtual element to check size of one char
@@ -778,9 +782,6 @@ function setNewSize(){
 
     twidth  = charWidth;
     theight = charHeight;
-    console.log(termWidth + ' - ' + termHeight);
-    console.log(elementWidth + ' - ' + elementHeight);
-    console.log(twidth + ' - ' + theight);
 
     ws.send(uint8Array);
 }
