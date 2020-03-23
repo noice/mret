@@ -24,11 +24,14 @@ int pty_close(PTY * pty, int connection_fd);
 int pty_resize(PTY * pty, char * buf);
 
 volatile int propagate_sigterm = 0;  // If 1, then call ioctl to exit
+volatile int propagate_sigchld = 0;  // If 1, then child is dead
 
 void 
 signal_handler(int signal) { // Handler for SIGWINCH
     if (signal == SIGTERM) {
         propagate_sigterm = 1;
+    } else if (signal == SIGCHLD) {
+        propagate_sigchld = 1;
     }
 }
 
@@ -40,8 +43,6 @@ int ws_close(int connection_fd);
 int ws_ping(int connection_fd);
 int ws_pong(int connection_fd);
 int is_http_request(char * buf, uint len);
-
-
 
 int
 new_pty(char * cmd, int connection_fd) {
@@ -106,10 +107,15 @@ init_pty(PTY * pty, int connection_fd) {
     pty->act.sa_flags = 0;
 
     if (sigaction(SIGTERM, &pty->act, NULL) < 0) {
-        perror("ptypair: невозможно обработать SIGWTERM");
+        perror("ptypair: невозможно обработать SIGTERM");
         return 1;
     }
-
+    
+    if (sigaction(SIGCHLD, &pty->act, NULL) < 0) {
+        perror("ptypair: невозможно обработать SIGCHLD");
+        return 1;
+    }
+    
     tcgetattr(connection_fd, &pty->ot);
     pty->t = pty->ot;
     pty->t.c_lflag &= ~(ICANON | ISIG | ECHO | ECHOCTL | ECHOE |
@@ -131,33 +137,33 @@ int
 pty_close(PTY * pty, int connection_fd) {
     // Wait for terminating the process which executes commands
     int w;
-    int status;
     time_t t1, t2;
     
-    kill(pty->pid, SIGTERM);
     printf("Terminating pty...\n");
+
+    // Send terminating signal
+    kill(pty->pid, SIGTERM);
+
+    // Start time of timer
     if ((t1 = time(0)) == -1) {
         perror("Error while getting time");
     }
+
+    // While process exist, wait for it termination
     do {
+        // Update elapsed time of cycle
         if ((t2 = time(0)) == -1) {
             perror("Error while getting time");
         }
 
-        w = waitpid(pty->pid, &status, 0);
-        if (w == -1) {
-            perror("Error while waiting");
-        }
-        
-        // If waiting is longer than 10 seconds, then send SIGKILL
-        if ((t2 - t1) > 10) {
+        // If 10 seconds or more have passed, than SIGKILL process
+        if ((t2 - t1) >= 10) {
             kill(pty->pid, SIGKILL);
-            printf("Timeout. Kill signal for pty\n");
             break;
         }
 
+    } while (propagate_sigchld != 1);
 
-    } while(!WIFEXITED(status) && !WIFSIGNALED(status));
     printf("Pty was closed\n");
 
     // Close connection
@@ -250,6 +256,10 @@ pty_loop(PTY * pty, int connection_fd) {
         if (propagate_sigterm) {
             pty_close(pty, connection_fd);
             propagate_sigterm = 0;
+        }
+        
+        if (propagate_sigchld) {
+            pty_close(pty, connection_fd);
         }
 
         if (pty->ufds[1].revents & POLLIN) {
