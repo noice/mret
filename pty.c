@@ -262,7 +262,6 @@ pty_loop(PTY * pty, int connection_fd) {
         
         if (propagate_sigchld) {
             pty_close(pty, connection_fd);
-            propagate_sigterm = 0;
         }
 
         if (pty->ufds[1].revents & POLLIN) {
