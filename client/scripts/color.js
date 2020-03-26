@@ -1,23 +1,23 @@
 const colormap = {
-    0: 'rgb(0,0,0)',
-    1: 'rgb(170,0,0)',
-    2: 'rgb(0,170,0)',
-    3: 'rgb(170,85,0)',
-    4: 'rgb(0,0,170)',
-    5: 'rgb(170,0,170)',
-    6: 'rgb(0,170,170)',
-    7: 'rgb(170,170,170)'
+    0: 'rgb(0, 0, 0)',
+    1: 'rgb(170, 0, 0)',
+    2: 'rgb(0, 170, 0)',
+    3: 'rgb(170, 85, 0)',
+    4: 'rgb(0, 0, 170)',
+    5: 'rgb(170, 0, 170)',
+    6: 'rgb(0, 170, 170)',
+    7: 'rgb(170, 170, 170)'
 };
 
 const brcolormap = {
-    0: 'rgb(85,85,85)',
-    1: 'rgb(255,85,85)',
-    2: 'rgb(85,255,85)',
-    3: 'rgb(255,255,85)',
-    4: 'rgb(85,85,255)',
-    5: 'rgb(255,85,255)',
-    6: 'rgb(85,255,255)',
-    7: 'rgb(255,255,255)'
+    0: 'rgb(85, 85, 85)',
+    1: 'rgb(255, 85, 85)',
+    2: 'rgb(85, 255, 85)',
+    3: 'rgb(255, 255, 85)',
+    4: 'rgb(85, 85, 255)',
+    5: 'rgb(255, 85, 255)',
+    6: 'rgb(85, 255, 255)',
+    7: 'rgb(255, 255, 255)'
 };
 
 const col8bitmap = {
@@ -60,15 +60,15 @@ function getColor(buf, i){
             gcol = parseInt(gcol / 6);
             let greencolor = col8bitmap[gcol];
 
-            return 'rgb(' + redcolor + ',' + greencolor + ',' + bluecolor + ')';
+            return 'rgb(' + redcolor + ', ' + greencolor + ', ' + bluecolor + ')';
         } else {
             let t = 8;
             t += (col - 232) * 10;
-            return 'rgb(' + t.toString() + ',' + t.toString() + ',' + t.toString() + ')';
+            return 'rgb(' + t.toString() + ', ' + t.toString() + ', ' + t.toString() + ')';
         }
 
     } else if(buf[i + 1] == 2){
-        return 'rgb(' + buf[i + 2].toString() + ',' + buf[i + 3].toString() + ',' + buf[i + 4].toString() + ')';
+        return 'rgb(' + buf[i + 2].toString() + ', ' + buf[i + 3].toString() + ', ' + buf[i + 4].toString() + ')';
     }
 
 }
