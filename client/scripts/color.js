@@ -135,7 +135,10 @@ function handleCGR(buf) {
                     i += 4;
                 break;
             case 39:
-                screen.style.color = defaultStyle.color;
+                if(!screen.style.reverse)
+                    screen.style.color = defaultStyle.color;
+                else
+                    screen.style.color = defaultStyle.bgcolor;
                 break;
 
             case 40:
@@ -160,7 +163,10 @@ function handleCGR(buf) {
                     i += 4;
                 break;
             case 49:
-                screen.style.bgcolor = defaultStyle.bgcolor;
+                if(!screen.style.reverse)
+                    screen.style.bgcolor = defaultStyle.bgcolor;
+                else
+                    screen.style.bgcolor = defaultStyle.color;
                 break;
 
             case 90:
