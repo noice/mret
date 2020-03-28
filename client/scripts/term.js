@@ -3,6 +3,11 @@ var escape_sequence = '';
 var CSI_priv = '';
 var OSC_msg = '';
 
+var alternate_screen = '';
+var twidth  = 50;
+var theight = 50;
+var terminal;
+
 function Screen() {
     this.style = new Style();
     this.curx = 0;
@@ -10,15 +15,13 @@ function Screen() {
     this.saved_curx = 0;
     this.saved_cury = 0;
     this.cur_visible = 1;
+    this.scroll_top = 0;
+    this.scroll_bottom = theight - 1;
 };
 
 screen = new Screen();
 altscreen = new Screen();
 
-var alternate_screen = '';
-var twidth  = 50;
-var theight = 50;
-var terminal;
 init();
 
 function init() {
@@ -278,7 +281,45 @@ function handleCSI() {
             mergeSameStyle(screen.cury);
             changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
             break;
-        case 'P':
+        case 'L': //Insert Lines
+            if(buf[0] == 0)
+                buf[0] = 1;
+            if(screen.scroll_top == 0 && screen.scroll_bottom == theight - 1){
+                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+                for(let i = 0; i < buf[0]; i ++){
+                    terminal.insertBefore(document.createElement('div'), terminal.childNodes[screen.cury]);
+                 
+                    let charElem = document.createElement('span');
+                    charElem.appendChild(document.createTextNode('\xA0'.repeat(twidth)));
+                    charElem.style.color = screen.style.color;
+                    charElem.style.backgroundColor = screen.style.bgcolor;
+                    terminal.firstElementChild.append(charElem);
+                 
+                    changeCurPos(screen.curx, screen.cury + 1, screen.curx, screen.cury);
+                }
+            } else {
+                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+                for(let i = 0; i < buf[0]; i ++){
+                    if(terminal.childNodes.length > screen.scroll_bottom){
+                        terminal.removeChild(terminal.childNodes[screen.scroll_bottom]);
+                    }
+             
+                    terminal.insertBefore(document.createElement('div'), terminal.childNodes[screen.cury]);
+             
+                    let charElem = document.createElement('span');
+                    charElem.appendChild(document.createTextNode('\xA0'.repeat(twidth)));
+                    charElem.style.color = screen.style.color;
+                    charElem.style.backgroundColor = screen.style.bgcolor;
+                    terminal.childNodes[screen.cury].append(charElem);
+                }
+            }
+            break;
+        case 'M': //Delete Lines
+            if(buf[0] == 0)
+                buf[0] = 1;
+            // TODO
+            break;
+        case 'P': //Delete Characters
             let curdiv = terminal.childNodes[screen.cury];
             changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
 
@@ -300,24 +341,60 @@ function handleCSI() {
         case 'S': //Scroll Up
             if(buf[0] == 0)
                 buf[0] = 1;
-            for(let i = 0; i < buf[0]; i ++){
-                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury + 1);
-                terminal.removeChild(terminal.firstElementChild);
+            if(screen.scroll_top == 0 && screen.scroll_bottom == theight - 1){
+                for(let i = 0; i < buf[0]; i ++){
+                    changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury + 1);
+                    terminal.removeChild(terminal.firstElementChild);
+                }
+            } else {
+                for(let i = 0; i < buf[0]; i ++){
+                    if(terminal.childNodes.length > screen.scroll_top){
+                        terminal.removeChild(terminal.childNodes[screen.scroll_top]);
+                    }
+             
+                    if(terminal.childNodes.length > screen.scroll_bottom){
+                        terminal.insertBefore(document.createElement('div'), terminal.childNodes[screen.scroll_bottom]);
+             
+                        let charElem = document.createElement('span');
+                        charElem.appendChild(document.createTextNode('\xA0'.repeat(twidth)));
+                        charElem.style.color = screen.style.color;
+                        charElem.style.backgroundColor = screen.style.bgcolor;
+                        terminal.childNodes[screen.scroll_bottom].append(charElem);
+                    }
+                }
             }
             break;
         case 'T': //Scroll Down
             if(buf[0] == 0)
                 buf[0] = 1;
-            for(let i = 0; i < buf[0]; i ++){
-                terminal.insertBefore(document.createElement('div'), terminal.firstElementChild);
+            if(screen.scroll_top == 0 && screen.scroll_bottom == theight - 1){
+                for(let i = 0; i < buf[0]; i ++){
+                    terminal.insertBefore(document.createElement('div'), terminal.firstElementChild);
+                 
+                    let charElem = document.createElement('span');
+                    charElem.appendChild(document.createTextNode('\xA0'.repeat(twidth)));
+                    charElem.style.color = screen.style.color;
+                    charElem.style.backgroundColor = screen.style.bgcolor;
+                    terminal.firstElementChild.append(charElem);
+                 
+                    changeCurPos(screen.curx, screen.cury + 1, screen.curx, screen.cury);
+                }
+            } else {
+                for(let i = 0; i < buf[0]; i ++){
+                    if(terminal.childNodes.length > screen.scroll_bottom){
+                        terminal.removeChild(terminal.childNodes[screen.scroll_bottom]);
+                    }
              
-                let charElem = document.createElement('span');
-                charElem.appendChild(document.createTextNode('\xA0'));
-                charElem.style.color = defaultStyle.color;
-                charElem.style.backgroundColor = defaultStyle.bgcolor;
-                terminal.firstElementChild.append(charElem);
+                    if(terminal.childNodes.length > screen.scroll_top){
+                        terminal.insertBefore(document.createElement('div'), terminal.childNodes[screen.scroll_top]);
              
-                changeCurPos(screen.curx, screen.cury + 1, screen.curx, screen.cury);
+                        let charElem = document.createElement('span');
+                        charElem.appendChild(document.createTextNode('\xA0'.repeat(twidth)));
+                        charElem.style.color = screen.style.color;
+                        charElem.style.backgroundColor = screen.style.bgcolor;
+                        terminal.childNodes[screen.scroll_top].append(charElem);
+                    }
+                }
             }
             break;
         case 'X': //Erase Character(s)
@@ -352,6 +429,15 @@ function handleCSI() {
             if(buf[0] == 6){
                 ws.send('\x1B[' + (screen.cury + 1) + ';' + (screen.curx + 1)  + 'R');
                 console.log('\x1B[' + (screen.cury + 1) + ';' + (screen.curx + 1)  + 'R');
+            }
+            break;
+        case 'r': //Set Scrolling Region [top;bottom] (default = full size of window)
+            if (buf[0] == 0){
+                screen.scroll_top = 0;
+                screen.scroll_bottom = theight - 1;
+            } else {
+                screen.scroll_top = buf[0] - 1;
+                screen.scroll_bottom = buf[1] - 1;
             }
             break;
         case 's': //Save Cursor Position
@@ -503,8 +589,26 @@ function nextChar(next_char) {
             break;
 
         case '\n':
-            changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury + 1);
-            screen.cury += 1;
+            if(screen.cury != screen.scroll_bottom && screen.scroll_top == 0 && screen.scroll_bottom == theight - 1){
+                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury + 1);
+                screen.cury += 1;
+            } else {
+                if(terminal.childNodes.length > screen.scroll_top){
+                    terminal.removeChild(terminal.childNodes[screen.scroll_top]);
+                }
+
+                if(terminal.childNodes.length > screen.scroll_bottom){
+                    terminal.insertBefore(document.createElement('div'), terminal.childNodes[screen.scroll_bottom]);
+
+                    let charElem = document.createElement('span');
+                    charElem.appendChild(document.createTextNode('\xA0'.repeat(twidth)));
+                    charElem.style.color = screen.style.color;
+                    charElem.style.backgroundColor = screen.style.bgcolor;
+                    terminal.childNodes[screen.scroll_bottom].append(charElem);
+                }
+
+                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+            }
             break;
 
         case '\r': //CR
@@ -798,6 +902,14 @@ function setNewSize(){
     
     let encoder = new TextEncoder();
     let uint8Array = encoder.encode('\x1b[8;' + charHeight + ';' + charWidth + 't');
+
+    if(screen.scroll_top == 0 && screen.scroll_bottom == theight - 1){
+        screen.scroll_bottom = charHeight - 1;
+    }
+
+    if(altscreen.scroll_top == 0 && altscreen.scroll_bottom == theight - 1){
+        altscreen.scroll_bottom = charHeight - 1;
+    }
 
     twidth  = charWidth;
     theight = charHeight;
