@@ -36,7 +36,9 @@ var dcurbgcolor = brcolormap[7];
 
 function Style () {
     this.color = dcolor;
+    this.last8bitcolor = -1;
     this.bgcolor = dbgcolor;
+    this.last8bitbgcolor = -1;
     this.curcolor = dcolor;
     this.curbgcolor = dbgcolor;
     this.brightness = 0;
@@ -70,7 +72,6 @@ function getColor(buf, i){
     } else if(buf[i + 1] == 2){
         return 'rgb(' + buf[i + 2].toString() + ', ' + buf[i + 3].toString() + ', ' + buf[i + 4].toString() + ')';
     }
-
 }
 
 function handleCGR(buf) {
@@ -92,25 +93,38 @@ function handleCGR(buf) {
             case 0:
                 screen.style.color = defaultStyle.color;
                 screen.style.bgcolor = defaultStyle.bgcolor;
+                screen.style.last8bitcolor = -1;
+                screen.style.last8bitbgcolor = -1;
                 screen.style.brightness = 0;
                 screen.style.reverse = 0;
+                
                 break;
             case 1:
                 screen.style.brightness = 1;
+
+                if (screen.style.last8bitcolor != -1) {
+                    screen.style.color = brcolormap[screen.style.last8bitcolor];
+                }
+
+                if (screen.style.last8bitbgcolor != -1) {
+                    screen.style.bgcolor = brcolormap[screen.style.last8bitbgcolor];
+                }
                 break;
             case 7:  //Reverse video
                 if (!screen.style.reverse){
                     screen.style.reverse = 1;
-                    [screen.style.color, screen.style.bgcolor] = [screen.style.bgcolor, screen.style.color];
                 } else {
                     screen.style.reverse = 0;
-                    [screen.style.color, screen.style.bgcolor] = [screen.style.bgcolor, screen.style.color];
                 }
+
+                [screen.style.color, screen.style.bgcolor] = [screen.style.bgcolor, screen.style.color];
+                [screen.style.last8bitcolor, screen.style.last8bitbrcolor] = [screen.style.last8bitbrcolor, screen.style.last8bitcolor];
                 break;
             case 27: //Inverse off
                 if(screen.style.reverse){
                     screen.style.reverse = 0;
                     [screen.style.color, screen.style.bgcolor] = [screen.style.bgcolor, screen.style.color];
+                    [screen.style.last8bitcolor, screen.style.last8bitbrcolor] = [screen.style.last8bitbrcolor, screen.style.last8bitcolor];
                 }
                 break;
             case 30:
@@ -125,6 +139,8 @@ function handleCGR(buf) {
                     screen.style.color = brcolormap[it % 10];
                 else 
                     screen.style.color =   colormap[it % 10];
+                
+                screen.style.last8bitcolor = it % 10;
                 break;
 
             case 38: // 8-bit and 24-bit colors
@@ -133,12 +149,16 @@ function handleCGR(buf) {
                     i += 2;
                 else if(buf[i + 1] == 2)
                     i += 4;
+
+                screen.style.last8bitcolor = -1;
                 break;
             case 39:
                 if(!screen.style.reverse)
                     screen.style.color = defaultStyle.color;
                 else
                     screen.style.color = defaultStyle.bgcolor;
+
+                screen.style.last8bitcolor = -1;
                 break;
 
             case 40:
@@ -153,6 +173,8 @@ function handleCGR(buf) {
                     screen.style.bgcolor = brcolormap[it % 10];
                 else 
                     screen.style.bgcolor =   colormap[it % 10];
+
+                screen.style.last8bitbrcolor = it % 10;
                 break;
 
             case 48: // 8-bit and 24-bit background colors
@@ -161,12 +183,16 @@ function handleCGR(buf) {
                     i += 2;
                 else if(buf[i + 1] == 2)
                     i += 4;
+
+                screen.style.last8bitbrcolor = -1;
                 break;
             case 49:
                 if(!screen.style.reverse)
                     screen.style.bgcolor = defaultStyle.bgcolor;
                 else
                     screen.style.bgcolor = defaultStyle.color;
+
+                screen.style.last8bitbrcolor = -1;
                 break;
 
             case 90:
@@ -178,6 +204,7 @@ function handleCGR(buf) {
             case 96:
             case 97:
                 screen.style.color = brcolormap[it % 10];
+                screen.style.last8bitcolor = -1;
                 break;
 
             case 100:
@@ -189,6 +216,7 @@ function handleCGR(buf) {
             case 106:
             case 107:
                 screen.style.bgcolor = brcolormap[it % 10];
+                screen.style.last8bitbrcolor = -1;
                 break;
             default:
                 break;
