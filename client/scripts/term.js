@@ -59,6 +59,9 @@ function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
 }
 
 function turnOffCur(x, y) {
+    if (x < 0 || y < 0) {
+        return;
+    }
     if (terminal.childNodes.length <= y) {
         return;
     }
@@ -311,13 +314,18 @@ function handleCSI() {
                     charElem.style.color = screen.style.color;
                     charElem.style.backgroundColor = screen.style.bgcolor;
                     terminal.childNodes[screen.cury].append(charElem);
+                    changeCurPos(screen.curx, screen.cury + 1, screen.curx, screen.cury);
                 }
             }
             break;
         case 'M': //Delete Lines
             if(buf[0] == 0)
                 buf[0] = 1;
-            // TODO
+            for(let i = 0; i < buf[0]; ++ i){
+                if(terminal.childNodes[i])
+                    terminal.removeChild(terminal.childNodes[i]);
+            }
+            changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
             break;
         case 'P': //Delete Characters
             let curdiv = terminal.childNodes[screen.cury];
@@ -361,6 +369,7 @@ function handleCSI() {
                         charElem.style.backgroundColor = screen.style.bgcolor;
                         terminal.childNodes[screen.scroll_bottom].append(charElem);
                     }
+                    changeCurPos(screen.curx, screen.cury - 1, screen.curx, screen.cury);
                 }
             }
             break;
@@ -394,6 +403,7 @@ function handleCSI() {
                         charElem.style.backgroundColor = screen.style.bgcolor;
                         terminal.childNodes[screen.scroll_top].append(charElem);
                     }
+                    changeCurPos(screen.curx, screen.cury + 1, screen.curx, screen.cury);
                 }
             }
             break;
@@ -566,6 +576,26 @@ function handleEscape(next_char){
             }
             break;
 
+        case 'M': 
+            // RI – Reverse Index
+            // Move the active position to the same horizontal position on the preceding line. If the active position is at the top margin, a scroll down is performed.
+            if(!escape_sequence){
+                if(screen.cury){
+                    changeCurPos(screen.curx, screen.cury, screen.curx - 1, screen.cury);
+                } else {
+                    terminal.insertBefore(document.createElement('div'), terminal.firstElementChild);
+                    changeCurPos(screen.curx, screen.cury + 1, screen.curx, screen.cury);
+                    terminal.removeChild(terminal.lastElementChild);
+                }
+            }
+
+            if(escape_sequence.length == 1){
+                escape_state = 0;
+            } else {
+                escape_sequence += next_char;
+            }
+            break;
+
         default:
             if(escape_sequence.length == 1){
                 escape_state = 0;
@@ -577,18 +607,43 @@ function handleEscape(next_char){
 }
 
 function nextChar(next_char) {
-    if(escape_state) {
+    if(escape_state && next_char != '\030' && next_char != '\032') { 
+        //Escape sequence handling if the next char is not CAN or SUB 
         handleEscape(next_char);
         if(escape_state)
             return;
     }
 
     switch(next_char) {
-        case '\x1b':
-            escape_state = 1;
+        case '\0': // NUL
+            break; // Ignored on input
+
+        case '\005': 
+                   // ENQ 
+            break; // Transmit answerback message
+
+        case '\007': 
+                   // BEL
             break;
 
-        case '\n':
+        case '\010': 
+                   // BS
+                   // Move the cursor to the left one character position, unless it is at the left margin, in which case no action occurs
+            if (screen.curx > 0) {
+                changeCurPos(screen.curx, screen.cury, screen.curx - 1, screen.cury);
+                screen.curx --;
+            }
+            break;
+
+        case '\011': 
+                   // HT
+                   // TODO
+            break; // Move the cursor to the next tab stop, or to the right margin if no further tab stops are present on the line
+
+        case '\n': // LF
+        case '\v': // VT
+        case '\f': // FF
+                   // This code causes a line feed or a new line operation
             if(screen.cury != screen.scroll_bottom && screen.scroll_top == 0 && screen.scroll_bottom == theight - 1){
                 changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury + 1);
                 screen.cury += 1;
@@ -607,26 +662,47 @@ function nextChar(next_char) {
                     terminal.childNodes[screen.scroll_bottom].append(charElem);
                 }
 
-                changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+                if(screen.cury)
+                    changeCurPos(screen.curx, screen.cury - 1, screen.curx, screen.cury);
+                else
+                    changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
             }
             break;
 
-        case '\r': //CR
+        case '\r': // CR
+                   // Move cursor to the left margin on the current line
             changeCurPos(screen.curx, screen.cury, 0, screen.cury);
             screen.curx = 0;
             break;
 
-        case '\x07': //BELL
+        case '\016': 
+                   // SO
+        case '\017': 
+                   // SI 
+        case '\021': 
+                   // XON
+        case '\023': 
+                   // XOFF 
+            break; // Maybe TODO
+
+        case '\030':
+                   // CAN
+                   // If sent during a control sequence, the sequence is immediately terminated and not executed
+                   // It also causes the error character to be displayed
+        case '\032':
+                   // SUB
+                   // Interpreted as CAN
+            escape_state = 0;
             break;
 
-        case '\x08': //Backspace
-            if (screen.curx > 0) {
-                changeCurPos(screen.curx, screen.cury, screen.curx - 1, screen.cury);
-                screen.curx --;
-            }
+        case '\033': 
+                   // Escape
+                   // Invokes a control sequence
+            escape_state = 1;
             break;
 
         default:
+                   // Not a control character
             printChar(next_char);
             break;
     }
