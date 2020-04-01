@@ -172,8 +172,10 @@ function handleCSI() {
         case 'J': //Erase Data
             if(buf[0] == 0 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
-                if (!curdiv)
-                    break;
+                if (!curdiv){
+                    changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+                    curdiv = terminal.childNodes[screen.cury];
+                }
 
                 while(curdiv != terminal.lastElementChild){
                     terminal.removeChild(terminal.lastElementChild);
@@ -193,14 +195,16 @@ function handleCSI() {
 
             if(buf[0] == 1 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
-                if (!curdiv)
-                    break;
+                if (!curdiv){
+                    changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+                    curdiv = terminal.childNodes[screen.cury];
+                }
 
                 while(curdiv != terminal.firstElementChild){
                     terminal.removeChild(terminal.firstElementChild);
                 }
 
-                while(terminal.childNodes.length <= screen.cury){
+                for(let i = 0; i < screen.cury; ++ i){
                     terminal.insertBefore(document.createElement('div'), terminal.firstElementChild);
 
                     let spaceElem = document.createElement('span');
@@ -217,8 +221,11 @@ function handleCSI() {
         case 'K': //Erase in Line
             if(buf[0] == 0 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
-                if (!curdiv)
-                    break;
+                if (!curdiv){
+                    changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+                    curdiv = terminal.childNodes[screen.cury];
+                }
+                
                 let x = screen.curx;
                 let ix = 0;
 
@@ -250,8 +257,11 @@ function handleCSI() {
 
             if(buf[0] == 1 || buf[0] == 2){
                 let curdiv = terminal.childNodes[screen.cury];
-                if (!curdiv)
-                    break;
+                if (!curdiv){
+                    changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+                    curdiv = terminal.childNodes[screen.cury];
+                }
+
                 let x = screen.curx;
                 let ix = 0;
 
@@ -644,9 +654,9 @@ function nextChar(next_char) {
         case '\v': // VT
         case '\f': // FF
                    // This code causes a line feed or a new line operation
-            if(screen.cury != screen.scroll_bottom && screen.scroll_top == 0 && screen.scroll_bottom == theight - 1){
+            if(screen.scroll_bottom != screen.cury){
                 changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury + 1);
-                screen.cury += 1;
+                screen.cury ++;
             } else {
                 if(terminal.childNodes.length > screen.scroll_top){
                     terminal.removeChild(terminal.childNodes[screen.scroll_top]);
@@ -660,12 +670,19 @@ function nextChar(next_char) {
                     charElem.style.color = screen.style.color;
                     charElem.style.backgroundColor = screen.style.bgcolor;
                     terminal.childNodes[screen.scroll_bottom].append(charElem);
+                } else {
+                    while(terminal.childNodes.length <= screen.scroll_bottom){
+                        terminal.appendChild(document.createElement('div'));
+                 
+                        let charElem = document.createElement('span');
+                        charElem.appendChild(document.createTextNode('\xA0'.repeat(twidth)));
+                        charElem.style.color = screen.style.color;
+                        charElem.style.backgroundColor = screen.style.bgcolor;
+                        terminal.lastElementChild.append(charElem);
+                    }
                 }
 
-                if(screen.cury)
-                    changeCurPos(screen.curx, screen.cury - 1, screen.curx, screen.cury);
-                else
-                    changeCurPos(screen.curx, screen.cury, screen.curx, screen.cury);
+                changeCurPos(screen.curx, screen.cury - 1, screen.curx, screen.cury);
             }
             break;
 
