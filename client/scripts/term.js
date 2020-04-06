@@ -1,5 +1,6 @@
 var escape_state = 0;
 var escape_sequence = '';
+var escape_string = 0;
 var CSI_priv = '';
 var OSC_msg = '';
 
@@ -39,21 +40,34 @@ function init() {
 
 function changeCurPos(prevcurx, prevcury, newcurx, newcury) {
     turnOffCur(prevcurx, prevcury);
+
+    if (newcury >= theight || newcurx >= twidth){
+        console.log("Error: attempt to set the cursor out of the terminal")
+        return;
+    }
+
+    while (terminal.childNodes.length <= newcury){
+        terminal.appendChild(document.createElement('div'));
+
+        let charElem = document.createElement('span');
+        charElem.appendChild(document.createTextNode('\xA0'.repeat(twidth)));
+        charElem.style.color = defaultStyle.color;
+        charElem.style.backgroundColor = defaultStyle.bgcolor;
+        
+        terminal.lastElementChild.appendChild(charElem);
+    }
+ 
+    let contentsize = terminal.childNodes[newcury].textContent.length;
+    if (contentsize <= newcurx){
+        let charElem = document.createElement('span');
+        charElem.appendChild(document.createTextNode('\xA0'.repeat(newcurx + 1 - contentsize)));
+        charElem.style.color = defaultStyle.color;
+        charElem.style.backgroundColor = defaultStyle.bgcolor;
+        
+        terminal.childNodes[newcury].appendChild(charElem);
+    }
+ 
     if(screen.cur_visible){
-        while (terminal.childNodes.length <= newcury){
-            terminal.appendChild(document.createElement('div'));
-        }
- 
-        let contentsize = terminal.childNodes[newcury].textContent.length;
-        if (contentsize <= newcurx){
-            let charElem = document.createElement('span');
-            charElem.appendChild(document.createTextNode('\xA0'.repeat(newcurx + 1 - contentsize)));
-            charElem.style.color = defaultStyle.color;
-            charElem.style.backgroundColor = defaultStyle.bgcolor;
-            
-            terminal.childNodes[newcury].appendChild(charElem);
-        }
- 
         turnOnCur(newcurx, newcury);
     }
 }
@@ -550,7 +564,7 @@ function parseCSI(next_char) {
 
 function handleEscape(next_char){
     if(escape_state == 1){
-        if('DEHMNOPVWXZ[]^_ #%()*+-./6789=>Fclmno|}~'.indexOf(next_char) == -1)
+        if('DEHMNOPVWXZ[]^_ #%()*+-./\\6789=>Fclmno|}~'.indexOf(next_char) == -1)
             escape_state = 0;
         else {
             escape_state = next_char;
@@ -606,6 +620,32 @@ function handleEscape(next_char){
             }
             break;
 
+        case '_':
+            // APC - Application Program Command
+            if(!escape_sequence){
+                escape_string = 1;
+            }
+
+            if(escape_sequence.length == 1){
+                escape_state = 0;
+            } else {
+                escape_sequence += next_char;
+            }
+            break;
+
+        case '\\':
+            // ST - String Terminator
+            if(!escape_sequence){
+                escape_string = 0;
+            }
+
+            if(escape_sequence.length == 1){
+                escape_state = 0;
+            } else {
+                escape_sequence += next_char;
+            }
+            break;
+
         default:
             if(escape_sequence.length == 1){
                 escape_state = 0;
@@ -622,6 +662,13 @@ function nextChar(next_char) {
         handleEscape(next_char);
         if(escape_state)
             return;
+    }
+
+    if(escape_string) {
+        if(next_char == '\033'){
+            escape_state = 1;
+        }
+        return;
     }
 
     switch(next_char) {
@@ -735,9 +782,14 @@ function printChar(next_char){
         changeCurPos(screen.curx, screen.cury, screen.curx + 1, screen.cury);
         screen.curx ++;    
     } else {
-        changeCurPos(screen.curx, screen.cury, 0, screen.cury + 1);
-        screen.cury ++;    
-        screen.curx = 0;
+        if (screen.cury < theight - 1){
+            changeCurPos(screen.curx, screen.cury, 0, screen.cury + 1);
+            screen.cury ++;    
+            screen.curx = 0;
+        } else {
+            changeCurPos(screen.curx, screen.cury, 0, screen.cury);
+            screen.curx = 0;
+        }
     }
 }
 
