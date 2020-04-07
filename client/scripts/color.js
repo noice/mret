@@ -34,6 +34,11 @@ var dbgcolor = colormap[0];
 var dcurcolor = colormap[0];
 var dcurbgcolor = brcolormap[7];
 
+var curStyle = {
+    color   : dcurcolor,
+    bgcolor : dcurbgcolor
+};
+
 function Style () {
     this.color = dcolor;
     this.last8bitcolor = -1;
@@ -46,6 +51,28 @@ function Style () {
 }
 
 var defaultStyle = new Style();
+
+function isEqualStyle(a, b){
+    if(a.color != b.color){
+        return false;
+    }
+
+    if(a.bgcolor != b.bgcolor){
+        return false;
+    }
+
+    return true;
+}
+
+function VirtualStyle(s) {
+    this.color   = s.color;
+    this.bgcolor = s.bgcolor;
+}
+
+function applyVirtualStyle(htmlElem, vStyleElem) {
+    htmlElem.style.color = vStyleElem.color;
+    htmlElem.style.backgroundColor = vStyleElem.bgcolor;
+}
 
 function getColor(buf, i){
     if(buf[i + 1] == 5){

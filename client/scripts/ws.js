@@ -1,27 +1,32 @@
 var ws = new WebSocket("ws://" + window.location.host);
 
-var data_queue = [];
-var is_working = 0;
+var dataQueue = [];
+var isWorking = 0;
 
-ws.onmessage = function(data) {
+ws.onopen = () => {
+    initTerminal();
+    setNewSize();
+};
+
+ws.onmessage = (data) => {
     let incomingMessage = data.data;
-    data_queue.push(incomingMessage);
+    dataQueue.push(incomingMessage);
     
-    if(!is_working){
-        is_working = 1;
-        new_data();
+    if(!isWorking){
+        isWorking = 1;
+        newData();
     }
-}
+};
 
-function new_data(){
-    while(data_queue.length){
-        let newest_msg = data_queue.shift();
-        console.log(newest_msg)
-        for(let next_char of newest_msg){
-            nextChar(next_char);
+function newData(){
+    while(dataQueue.length){
+        let newestMsg = dataQueue.shift();
+        console.log(newestMsg)
+        for(let nchar of newestMsg){
+            nextChar(nchar);
         }
+        commitChanges();
     }
-    is_working = 0;
+    isWorking = 0;
 }
 
-ws.onopen = () => setNewSize();
