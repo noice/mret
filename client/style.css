@@ -4,12 +4,12 @@ body {
 }
 
 pre {
-    margin:           0;
+    margin:           0 auto;
 }
 
 .terminal {
     color:            white;
-    font-family:      monospace;
+    font-family:      "Courier New", Courier, monospace;
     font-size:        11pt;
 }
 

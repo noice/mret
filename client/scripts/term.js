@@ -4,12 +4,9 @@ var escapeString = 0;
 var CSI_priv = '';
 var OSC_msg = '';
 
-var alternate_screen = '';
-
 var term;
 var termWidth;
 var termHeight = 1;
-
 var virtualTerm = [[]];
 var alterTerm = [[]];
 
@@ -278,7 +275,7 @@ function handleCSI() {
 
             for(let i = 0; i < buf[0]; i ++){
                 let curChar = virtualTerm[screen.cury][screen.curx + i];
-                curChar.text = nchar;
+                curChar.text = ' ';
                 curChar.style = new VirtualStyle(screen.style);
             }
 
@@ -664,7 +661,7 @@ function fillRow(index, style){
 }());
 
 function setNewSize(){
-    let tWidth  = innerWidth - 10;
+    let tWidth  = innerWidth;
     let tHeight = innerHeight;
     
     //Append virtual element to check size of one char
