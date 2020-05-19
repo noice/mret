@@ -12,7 +12,7 @@ class ServerThread(threading.Thread):
         self.port = port
 
     def run(self):
-        pass
+        server.start(address, port)
 
 class WSThread(threading.Thread):
     def __init__(self, conn):
