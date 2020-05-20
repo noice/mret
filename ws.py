@@ -4,8 +4,6 @@ import pty
 def start(conn):
     pass
 
-def get_connection():
-    return 0
-
 def listen_connection(port):
+    print('Listen connection on port', port)
     return 0
