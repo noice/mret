@@ -7,6 +7,7 @@ class MretHandler(http.server.SimpleHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
 
     def do_GET(self):
+        # Get requested file
         f = self.send_head()
 
         # If conf.js was requested
@@ -23,7 +24,7 @@ class MretHandler(http.server.SimpleHTTPRequestHandler):
             # Send port to ws
             listen_connection(port)
 
-            # Closing for reopen in write mode file
+            # Closing for reopen in read-write mode file
             if f:
                 f.close()
 
@@ -31,15 +32,15 @@ class MretHandler(http.server.SimpleHTTPRequestHandler):
                 # Add port to conf.js
                 f.write(bytes(f.peek().decode(encoding='utf-8').format(port), 'utf-8'))
 
-            # Response try
-            try:
-                self.copyfile(f, self.wfile)
-            finally:
-                f.close()
+        # Response try
+        try:
+            self.copyfile(f, self.wfile)
+        finally:
+            f.close()
 
 
 class MretServer(http.server.HTTPServer):
-    allow_reuse_address = True
+    allow_reuse_address = True # Test purpose
 
 
 def start(address, port):
