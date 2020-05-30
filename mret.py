@@ -8,5 +8,5 @@ if __name__ == '__main__':
     os.chdir("client")
 
     # Start server
-    server.start('127.0.0.1', 8000)
+    server.web.run_app(server.app)
 

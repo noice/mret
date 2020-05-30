@@ -1,53 +1,38 @@
-import http.server
+from aiohttp import web
 
-from ws import listen_connection
+routes = web.RouteTableDef()
 
+@routes.get('/')
+@routes.get('/{name}')
+async def handle(request):
+    name = request.match_info.get('name', 'index.html')
 
-class MretHandler(http.server.SimpleHTTPRequestHandler):
-    protocol_version = 'HTTP/1.1'
+    # Determine Content-Type
+    types = {'.html':'text/html', 
+            '.css':'text/css', 
+            '.js':'application/javascript'}
+    content_type = [types[file_type] for file_type in types 
+            if name.endswith(file_type)][0]
 
-    def do_GET(self):
-        # Get requested file
-        f = self.send_head()
+    with open(name, 'r') as index:
+        return web.Response(text=index.read(), 
+                            charset='UTF-8',
+                            content_type=content_type)
+    return web.Response()
 
-        # If conf.js was requested
-        # Find free port and type it to conf.js
-        if f.name == 'conf.js':
-            # Find free port
-            import socket as sock
-            s = sock.socket(sock.AF_INET, sock.SOCK_STREAM) 
-            s.bind(('', 0))
-            port = s.getsockname()[1]
-            s.shutdown()
-            s.close()
+@routes.get("/ws")
+async def wshandle(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
 
-            # Send port to ws
-            listen_connection(port)
+    async for msg in ws:
+        if msg.type == web.WSMsgType.text:
+            break
+        elif msg.type == web.WSMsgType.binary:
+            break
+        elif msg.type == web.WSMsgType.close:
+            break
+    return ws
 
-            # Closing for reopen in read-write mode file
-            if f:
-                f.close()
-
-            with open('conf.js', 'r+b') as f:
-                # Add port to conf.js
-                f.write(bytes(f.peek().decode(encoding='utf-8').format(port), 'utf-8'))
-
-        # Response try
-        try:
-            self.copyfile(f, self.wfile)
-        finally:
-            f.close()
-
-
-class MretServer(http.server.HTTPServer):
-    allow_reuse_address = True # Test purpose
-
-
-def start(address, port):
-    with MretServer((address, port), MretHandler) as mret_server:
-        print('Server is started')
-        try:
-            mret_server.serve_forever()
-        except KeyboardInterrupt:
-            pass
-    
+app = web.Application()
+app.add_routes(routes)
