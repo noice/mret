@@ -1,24 +1,53 @@
+import os
+import mimetypes
 from aiohttp import web
 
 routes = web.RouteTableDef()
 
+def init_app():
+    # Init mimetypes
+    mimetypes.init()
+
+    # Set app working directory
+    os.chdir('client/')
+
+    app = web.Application()
+    app.add_routes(routes)
+
+    app['404'] = {'body': '', 'ctype': ''} 
+
+    try:
+        with open('404.html', 'rb') as f:
+            app['404']['body'] = f.read()
+            app['404']['ctype'] = 'text/html'
+    except Exception as e:
+        pass
+
+    return app
+
+
 @routes.get('/')
 @routes.get('/{name}')
+@routes.get('/scripts/{name}')
 async def handle(request):
-    name = request.match_info.get('name', 'index.html')
+    name = request.path[1:] if request.path != '/' else 'index.html'
 
     # Determine Content-Type
-    types = {'.html':'text/html', 
-            '.css':'text/css', 
-            '.js':'application/javascript'}
-    content_type = [types[file_type] for file_type in types 
-            if name.endswith(file_type)][0]
+    ctype = (mimetypes.guess_type(name)[0] 
+             if mimetypes.guess_type(name)[0] is not None
+             else 'text/plain')
 
-    with open(name, 'r') as index:
-        return web.Response(text=index.read(), 
-                            charset='UTF-8',
-                            content_type=content_type)
-    return web.Response()
+    try:
+        with open(name, 'rb') as resp:
+            return web.Response(status=200, body=resp.read(), 
+                                charset='UTF-8', content_type=ctype)
+    except FileNotFoundError as e:
+        print(e)
+        return web.Response(status=404, body=app['404']['body'],
+                            content_type=app['404']['ctype'])
+    except Exception as e:
+        print(e)
+        return web.Response(status=500)
 
 @routes.get("/ws")
 async def wshandle(request):
@@ -34,5 +63,5 @@ async def wshandle(request):
             break
     return ws
 
-app = web.Application()
-app.add_routes(routes)
+
+app = init_app()
