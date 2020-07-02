@@ -1,4 +1,4 @@
-var ws = new WebSocket("ws://" + window.location.host);
+var ws = new WebSocket("ws://" + window.location.host + '/ws');
 
 var data_queue = [];
 var is_working = 0;

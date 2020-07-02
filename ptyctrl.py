@@ -5,7 +5,10 @@ import termios
 import struct
 import fcntl
 
+
 class PTY():
+    read_size = 1024
+
     def __init__(self, path, args=[]):
         self.pid, self.fd = pty.fork()
         if not self.pid:
@@ -18,6 +21,12 @@ class PTY():
         except Exception as e:
             print('Resize error:', e)
     
+    def write(self, data):
+        return os.write(self.fd, data)
+
+    def read(self):
+        return os.read(self.fd, self.read_size).decode()
+
     def close(self):
         os.close(self.fd)
         os.kill(self.pid, signal.SIGTERM)
