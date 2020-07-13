@@ -22,6 +22,8 @@ class PTY():
             print('Resize error:', e)
     
     def write(self, data):
+        if not isinstance(data, bytes):
+            data = bytes(data, encoding='utf-8')
         return os.write(self.fd, data)
 
     def read(self):

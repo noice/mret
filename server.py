@@ -3,6 +3,7 @@ import sys
 import mimetypes
 import weakref
 import asyncio
+import aiohttp
 from aiohttp import web
 
 from ptyctrl import PTY
@@ -63,12 +64,14 @@ async def ws_handle(request):
                                    request.app['loop'], pty, ws)
     try:
         async for msg in ws:
-            if msg.type == web.WSMsgType.text:
-                print('[WS-MSG]', msg.data)
+            if msg.type == aiohttp.WSMsgType.text:
+                #print('[WS-MSG-TEXT]', msg.data)
                 pty.write(msg.data)
-            elif msg.type == web.WSMsgType.binary:
-                break
-            elif msg.type == web.WSMsgType.close:
+            elif msg.type == aiohttp.WSMsgType.binary:
+                #print('[WS-MSG-BIN]', msg.data)
+                row, col = msg.data.decode()[:-1].split(';')[-2:]
+                pty.resize(int(row), int(col))
+            elif msg.type == aiohttp.WSMsgType.close:
                 request.app['loop'].remove_reader(pty.fd)
 
                 pty.close()
@@ -83,13 +86,13 @@ async def ws_handle(request):
 
 def pty_handle(loop, pty, ws):
     msg = pty.read()
-    print('[PTY-MSG]', msg)
+    #print('[PTY-MSG]', msg)
     loop.create_task(ws.send_str(msg))
 
 
 async def shutdown_app(app):
     for ws in set(app['websockets']):
-        await ws.close(code=web.WSCloseCode.GOING_AWAY,
+        await ws.close(code=aiohttp.WSCloseCode.GOING_AWAY,
                        message='Server shutdown')
 
     for pty in set(app['pty']):
