@@ -4,9 +4,11 @@ import mimetypes
 import weakref
 import asyncio
 import aiohttp
-from aiohttp import web
 
-from ptyctrl import PTY
+from aiohttp import web
+from aiohttp.web import run_app
+
+from .ptyctrl import PTY
 
 
 routes = web.RouteTableDef()
