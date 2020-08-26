@@ -1,4 +1,4 @@
-import src.server
+import src.server as server
 
 from src.server import run_app
 from src.args_parsing import parse_args
