@@ -1,0 +1,8 @@
+# Python cache
+__pycache__
+
+# Vim
+*.swp # Swap files
+*~    # Backup files
+*.un~ # Undo files
+tags  # Ctags
